@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PassWish — Super Admin Licensing Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.441.0/dist/umd/lucide.min.js"></script>
+  <script>
+    (function() {
+      var t = localStorage.getItem('passwish_theme');
+      if (t === 'dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="/static/styles.css" onerror="this.onerror=null;this.href='../static/styles.css';">
+</head>
+<body class="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans antialiased min-h-screen flex flex-col selection:bg-amber-500 selection:text-black">
+
+  <!-- Top Navigation Header -->
+  <header class="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Logo & Portal Tag -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-500 text-zinc-950 flex items-center justify-center font-bold shadow-md shadow-amber-500/20">
+          <i data-lucide="shield-check" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-lg font-extrabold tracking-tight">PassWish</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300/60 dark:border-amber-800">
+              Admin Portal
+            </span>
+          </div>
+          <p class="text-[10px] text-zinc-500 dark:text-zinc-400">लायसन्स मॅनेजमेंट व कन्सल्टंट कंट्रोल सेंटर</p>
+        </div>
+      </div>
+
+      <!-- Right Action Items -->
+      <div class="flex items-center gap-2.5 sm:gap-4">
+        <!-- Switch to CRM App -->
+        <a href="/" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs font-semibold text-zinc-800 dark:text-zinc-200 transition">
+          <i data-lucide="external-link" class="w-3.5 h-3.5 text-blue-500"></i>
+          <span>Open CRM Studio / मुख्य CRM</span>
+        </a>
+
+        <!-- Theme Toggle -->
+        <button onclick="toggleTheme()" class="p-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 transition" title="Toggle Theme">
+          <i id="themeToggleIcon" data-lucide="moon" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Current Admin Pill -->
+        <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/60 text-xs">
+          <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+          <span class="text-zinc-500 dark:text-zinc-400">Admin:</span>
+          <span class="font-bold text-zinc-800 dark:text-zinc-200" id="currentAdminName">{{ current_user.username }}</span>
+        </div>
+
+        <!-- Logout -->
+        <a href="/logout" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-xs font-semibold transition">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">Logout</span>
+        </a>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
+
+    <!-- Hero / Headline & Stats Row -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">
+          लायसन्स मॅनेजमेंट डॅशबोर्ड
+        </h1>
+        <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+          इथून तुम्ही नवीन कन्सल्टंटचे युझरनेम/पासवर्ड तयार करू शकता, लायसन्स व्हॅलिडिटी देऊ शकता आणि मुदत नियंत्रित करू शकता.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2.5">
+        <button onclick="openAddUserModal()" 
+                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-bold text-xs shadow-md shadow-amber-500/20 transition active:scale-95">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          <span>+ नवीन कन्सल्टंट / लायसन्स द्या</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI Summary Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+      <!-- Total Accounts -->
+      <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 shadow-xs space-y-1">
+        <div class="flex items-center justify-between text-zinc-500 dark:text-zinc-400 text-xs">
+          <span>एकूण क्लायंट्स (Agencies)</span>
+          <i data-lucide="building-2" class="w-4 h-4 text-blue-500"></i>
+        </div>
+        <div class="text-2xl font-black text-zinc-900 dark:text-white" id="statTotalUsers">0</div>
+        <div class="text-[10px] text-zinc-400">नोंदणीकृत कन्सल्टंट खाती</div>
+      </div>
+
+      <!-- Active Licenses -->
+      <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 shadow-xs space-y-1">
+        <div class="flex items-center justify-between text-zinc-500 dark:text-zinc-400 text-xs">
+          <span>सक्रिय लायसन्स (Active)</span>
+          <i data-lucide="badge-check" class="w-4 h-4 text-emerald-500"></i>
+        </div>
+        <div class="text-2xl font-black text-emerald-600 dark:text-emerald-400" id="statActiveLicenses">0</div>
+        <div class="text-[10px] text-emerald-600/80 dark:text-emerald-400/80">वैध कालावधी सुरू असलेले</div>
+      </div>
+
+      <!-- Expiring Soon -->
+      <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 shadow-xs space-y-1">
+        <div class="flex items-center justify-between text-zinc-500 dark:text-zinc-400 text-xs">
+          <span>लवकरच संपणारे (≤ ७ दिवस)</span>
+          <i data-lucide="clock" class="w-4 h-4 text-amber-500"></i>
+        </div>
+        <div class="text-2xl font-black text-amber-600 dark:text-amber-400" id="statExpiringSoon">0</div>
+        <div class="text-[10px] text-amber-600/80 dark:text-amber-400/80">रिन्युअलसाठी फॉलो-अप घ्या</div>
+      </div>
+
+      <!-- Expired Licenses -->
+      <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 shadow-xs space-y-1">
+        <div class="flex items-center justify-between text-zinc-500 dark:text-zinc-400 text-xs">
+          <span>मुदत संपलेले (Expired)</span>
+          <i data-lucide="alert-octagon" class="w-4 h-4 text-rose-500"></i>
+        </div>
+        <div class="text-2xl font-black text-rose-600 dark:text-rose-400" id="statExpiredLicenses">0</div>
+        <div class="text-[10px] text-rose-600/80 dark:text-rose-400/80">लॉगिन तात्पुरते बंद असलेले</div>
+      </div>
+    </div>
+
+    <!-- Filter Bar & Search -->
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 shadow-xs space-y-3">
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        
+        <!-- Search Input -->
+        <div class="relative flex-1 max-w-md">
+          <input type="text" id="searchInput" oninput="filterUsers()" 
+                 placeholder="Search agency, username, or phone..." 
+                 class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl pl-9 pr-3.5 py-2 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+          <i data-lucide="search" class="w-4 h-4 text-zinc-400 absolute left-3 top-2.5 pointer-events-none"></i>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 text-xs">
+          <button onclick="setFilter('all')" id="filterBtn_all" class="px-3 py-1.5 rounded-lg font-medium transition bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900">
+            सर्व (All)
+          </button>
+          <button onclick="setFilter('active')" id="filterBtn_active" class="px-3 py-1.5 rounded-lg font-medium transition text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+            Active
+          </button>
+          <button onclick="setFilter('expiring_soon')" id="filterBtn_expiring_soon" class="px-3 py-1.5 rounded-lg font-medium transition text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+            Expiring Soon
+          </button>
+          <button onclick="setFilter('expired')" id="filterBtn_expired" class="px-3 py-1.5 rounded-lg font-medium transition text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+            Expired
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Clients & Licenses Table -->
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xs overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider text-[11px]">
+              <th class="py-3 px-4">एजन्सी व कन्सल्टंट (Agency / Client)</th>
+              <th class="py-3 px-4">लॉगिन आयडी (Username)</th>
+              <th class="py-3 px-4">मोबाईल / व्हॉट्सअ‍ॅप</th>
+              <th class="py-3 px-4">लायसन्स व्हॅलिडिटी (Expiry Date)</th>
+              <th class="py-3 px-4 text-center">स्थिती (Active)</th>
+              <th class="py-3 px-4 text-right">कृती (Actions)</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody" class="divide-y divide-zinc-200 dark:divide-zinc-800 font-normal">
+            <!-- Rows injected dynamically via JS -->
+            <tr>
+              <td colspan="6" class="py-8 text-center text-zinc-400">डेटा लोड होत आहे...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- 1. Add New Client / Issue License Modal -->
+  <div id="addUserModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-zinc-900 dark:text-white">नवीन कन्सल्टंट / एजन्सी खाते तयार करा</h3>
+            <p class="text-[11px] text-zinc-400">लॉगिन क्रेडेंशियल्स आणि लायसन्स व्हॅलिडिटी सेट करा</p>
+          </div>
+        </div>
+        <button onclick="closeAddUserModal()" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="addUserForm" onsubmit="handleCreateUser(event)" class="space-y-3.5 text-xs">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">एजन्सीचे नाव (Agency Name)</label>
+            <input type="text" id="new_agency_name" placeholder="उदा. Sai Passport & Visa Hub" 
+                   class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">व्यक्तीचे नाव (Contact Person)</label>
+            <input type="text" id="new_full_name" placeholder="उदा. Sachin Patil" 
+                   class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs focus:outline-none focus:border-amber-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">लॉगिन युझरनेम (Username) *</label>
+            <input type="text" id="new_username" required placeholder="saipassport" 
+                   class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">पासवर्ड (Password) *</label>
+            <input type="text" id="new_password" required placeholder="Pass@2026" 
+                   class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs focus:outline-none focus:border-amber-500 font-mono">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">मोबाईल / व्हॉट्सअ‍ॅप नंबर</label>
+          <input type="tel" id="new_phone" placeholder="9822012345" 
+                 class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs focus:outline-none focus:border-amber-500">
+        </div>
+
+        <!-- License Validity Presets -->
+        <div class="border border-amber-200/60 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl p-3 space-y-2">
+          <label class="block font-semibold text-amber-900 dark:text-amber-300 flex items-center justify-between">
+            <span>लायसन्स कालावधी (License Validity Duration)</span>
+            <span class="text-[10px] text-amber-700 dark:text-amber-400">क्लिक करून झटपट निवडा</span>
+          </label>
+          
+          <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+            <button type="button" onclick="setExpiryDays(30)" class="py-1.5 px-2 bg-white dark:bg-zinc-800 hover:bg-amber-100 dark:hover:bg-amber-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-[11px] font-medium text-center transition">
+              १ महिना (30d)
+            </button>
+            <button type="button" onclick="setExpiryDays(90)" class="py-1.5 px-2 bg-white dark:bg-zinc-800 hover:bg-amber-100 dark:hover:bg-amber-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-[11px] font-medium text-center transition">
+              ३ महिने (90d)
+            </button>
+            <button type="button" onclick="setExpiryDays(180)" class="py-1.5 px-2 bg-white dark:bg-zinc-800 hover:bg-amber-100 dark:hover:bg-amber-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-[11px] font-medium text-center transition">
+              ६ महिने (180d)
+            </button>
+            <button type="button" onclick="setExpiryDays(365)" class="py-1.5 px-2 bg-white dark:bg-zinc-800 hover:bg-amber-100 dark:hover:bg-amber-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-[11px] font-medium text-center transition">
+              १ वर्ष (1 Year)
+            </button>
+            <button type="button" onclick="setExpiryDays(null)" class="py-1.5 px-2 bg-white dark:bg-zinc-800 hover:bg-purple-100 dark:hover:bg-purple-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-[11px] font-medium text-center transition text-purple-700 dark:text-purple-300">
+              Lifetime ∞
+            </button>
+          </div>
+
+          <div class="pt-1">
+            <label class="block text-[11px] text-zinc-600 dark:text-zinc-400 mb-1">किंवा थेट अंतिम तारीख निवडा (Valid Until Date):</label>
+            <input type="date" id="new_valid_until" 
+                   class="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl p-2 text-xs font-mono focus:outline-none focus:border-amber-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">पेमेंट किंवा ॲडमिन नोट्स (Notes / Transaction Ref)</label>
+          <input type="text" id="new_notes" placeholder="उदा. ₹2,999 Paid via GPay - Ref: 98127391" 
+                 class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs focus:outline-none focus:border-amber-500">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+          <button type="button" onclick="closeAddUserModal()" class="px-4 py-2 border border-zinc-200 dark:border-zinc-700 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-medium">
+            रद्द करा (Cancel)
+          </button>
+          <button type="submit" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl shadow-xs transition">
+            खाते तयार करा व लायसन्स द्या
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <!-- 2. Quick Renew License Modal -->
+  <div id="renewModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      
+      <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-zinc-900 dark:text-white">लायसन्स कालावधी वाढवा (Renew)</h3>
+            <p class="text-[11px] text-zinc-400" id="renewModalUserSubtitle">कन्सल्टंटचे नाव</p>
+          </div>
+        </div>
+        <button onclick="closeRenewModal()" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <input type="hidden" id="renewUserId">
+
+      <div class="space-y-3 text-xs">
+        <div class="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-xl border border-zinc-200/80 dark:border-zinc-700/60 space-y-1">
+          <div class="text-[11px] text-zinc-400">सध्याची मुदत (Current Expiry):</div>
+          <div class="text-sm font-bold text-zinc-800 dark:text-zinc-200 font-mono" id="renewCurrentExpiry">—</div>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="block font-semibold text-zinc-700 dark:text-zinc-300">कालावधी जोडा (Add Duration):</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="executeRenewByDays(30)" class="py-2.5 px-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600 border border-zinc-200 dark:border-zinc-700 rounded-xl font-medium text-center transition">
+              + १ महिना (30 Days)
+            </button>
+            <button type="button" onclick="executeRenewByDays(90)" class="py-2.5 px-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600 border border-zinc-200 dark:border-zinc-700 rounded-xl font-medium text-center transition">
+              + ३ महिने (90 Days)
+            </button>
+            <button type="button" onclick="executeRenewByDays(180)" class="py-2.5 px-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600 border border-zinc-200 dark:border-zinc-700 rounded-xl font-medium text-center transition">
+              + ६ महिने (180 Days)
+            </button>
+            <button type="button" onclick="executeRenewByDays(365)" class="py-2.5 px-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600 border border-zinc-200 dark:border-zinc-700 rounded-xl font-medium text-center transition">
+              + १ वर्ष (365 Days)
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-1.5">
+          <label class="block font-semibold text-zinc-700 dark:text-zinc-300">किंवा थेट नवीन तारीख सेट करा:</label>
+          <div class="flex items-center gap-2">
+            <input type="date" id="renewCustomDate" class="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2 text-xs font-mono focus:outline-none focus:border-emerald-500">
+            <button type="button" onclick="executeRenewByCustomDate()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition">
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 3. Edit User & Password Reset Modal -->
+  <div id="editUserModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      
+      <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold">
+            <i data-lucide="edit-3" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-zinc-900 dark:text-white">कन्सल्टंट माहिती व पासवर्ड बदला</h3>
+            <p class="text-[11px] text-zinc-400" id="editModalUserSubtitle">Edit User</p>
+          </div>
+        </div>
+        <button onclick="closeEditUserModal()" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="editUserForm" onsubmit="handleUpdateUser(event)" class="space-y-3 text-xs">
+        <input type="hidden" id="edit_user_id">
+
+        <div>
+          <label class="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">एजन्सीचे नाव (Agency Name)</label>
+          <input type="text" id="edit_agency_name" 
+                 class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div>
+          <label class="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">व्यक्तीचे नाव (Contact Person)</label>
+          <input type="text" id="edit_full_name" 
+                 class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div>
+          <label class="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">मोबाईल / व्हॉट्सअ‍ॅप</label>
+          <input type="tel" id="edit_phone" 
+                 class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div>
+          <label class="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">नवीन पासवर्ड (New Password) — बदल नको असल्यास रिकामे ठेवा</label>
+          <input type="text" id="edit_password" placeholder="Leave empty to keep unchanged" 
+                 class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs focus:outline-none focus:border-blue-500 font-mono">
+        </div>
+
+        <div>
+          <label class="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">ॲडमिन नोट्स (Notes)</label>
+          <input type="text" id="edit_notes" 
+                 class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+          <button type="button" onclick="closeEditUserModal()" class="px-4 py-2 border border-zinc-200 dark:border-zinc-700 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-medium">
+            रद्द करा
+          </button>
+          <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-xs transition">
+            अपडेट सेव्ह करा
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    var allUsers = [];
+    var currentFilter = 'all';
+
+    // Theme Engine
+    function toggleTheme() {
+      var isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('passwish_theme', isDark ? 'dark' : 'light');
+      updateThemeIcon(isDark);
+    }
+    function updateThemeIcon(isDark) {
+      var icon = document.getElementById('themeToggleIcon');
+      if (icon) {
+        icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+        lucide.createIcons();
+      }
+    }
+    updateThemeIcon(document.documentElement.classList.contains('dark'));
+
+    // Toast Engine
+    function showToast(msg, type) {
+      type = type || 'success';
+      var container = document.getElementById('toastContainer');
+      var toast = document.createElement('div');
+      toast.className = 'px-4 py-2.5 rounded-xl text-xs font-semibold shadow-xl border flex items-center gap-2 pointer-events-auto transition duration-300 transform translate-y-2 ' +
+        (type === 'error' ? 'bg-rose-900 border-rose-700 text-rose-100' : 'bg-emerald-900 border-emerald-700 text-emerald-100');
+      toast.innerHTML = (type === 'error' ? '⚠️ ' : '✅ ') + '<span>' + msg + '</span>';
+      container.appendChild(toast);
+      setTimeout(function() {
+        toast.style.opacity = '0';
+        setTimeout(function() { toast.remove(); }, 300);
+      }, 4000);
+    }
+
+    // Set Expiry Days Helper in Add Modal
+    function setExpiryDays(days) {
+      var input = document.getElementById('new_valid_until');
+      if (days === null) {
+        input.value = '';
+        return;
+      }
+      var target = new Date();
+      target.setDate(target.getDate() + days);
+      input.value = target.toISOString().split('T')[0];
+    }
+
+    // Load Data
+    function loadAdminDashboard() {
+      // 1. Stats
+      fetch('/api/admin/stats')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          document.getElementById('statTotalUsers').innerText = d.total_users || 0;
+          document.getElementById('statActiveLicenses').innerText = d.active_licenses || 0;
+          document.getElementById('statExpiringSoon').innerText = d.expiring_soon || 0;
+          document.getElementById('statExpiredLicenses').innerText = d.expired_licenses || 0;
+        })
+        .catch(function(err) { console.error('Stats error:', err); });
+
+      // 2. Users
+      fetch('/api/users')
+        .then(function(r) { return r.json(); })
+        .then(function(users) {
+          allUsers = users;
+          renderUsersTable();
+        })
+        .catch(function(err) {
+          console.error('Users error:', err);
+          showToast('Failed to load users: ' + err.message, 'error');
+        });
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      ['all', 'active', 'expiring_soon', 'expired'].forEach(function(f) {
+        var btn = document.getElementById('filterBtn_' + f);
+        if (btn) {
+          if (f === filter) {
+            btn.className = 'px-3 py-1.5 rounded-lg font-bold transition bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-xs';
+          } else {
+            btn.className = 'px-3 py-1.5 rounded-lg font-medium transition text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800';
+          }
+        }
+      });
+      renderUsersTable();
+    }
+
+    function filterUsers() {
+      renderUsersTable();
+    }
+
+    function renderUsersTable() {
+      var q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+      var tbody = document.getElementById('usersTableBody');
+      tbody.innerHTML = '';
+
+      var filtered = allUsers.filter(function(u) {
+        // Status filter
+        if (currentFilter === 'active' && (u.license_status === 'expired' || !u.is_active)) return false;
+        if (currentFilter === 'expiring_soon' && u.license_status !== 'expiring_soon') return false;
+        if (currentFilter === 'expired' && u.license_status !== 'expired') return false;
+
+        // Search query
+        if (q) {
+          var matchAgency = (u.agency_name || '').toLowerCase().includes(q);
+          var matchUser = (u.username || '').toLowerCase().includes(q);
+          var matchName = (u.full_name || '').toLowerCase().includes(q);
+          var matchPhone = (u.phone || '').toLowerCase().includes(q);
+          if (!matchAgency && !matchUser && !matchName && !matchPhone) return false;
+        }
+
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-zinc-400">कोणतेही कन्सल्टंट किंवा लायसन्स सापडले नाही.</td></tr>';
+        return;
+      }
+
+      filtered.forEach(function(u) {
+        var tr = document.createElement('tr');
+        tr.className = 'hover:bg-zinc-50/50 dark:hover:bg-zinc-800/40 transition';
+
+        // 1. Agency & Name
+        var isMasterAdmin = (u.username === 'admin');
+        var agencyDisplay = u.agency_name ? u.agency_name : (isMasterAdmin ? 'PassWish Head Office' : 'Independent Consultant');
+        var nameDisplay = u.full_name ? u.full_name : u.username;
+
+        // 2. Phone / WhatsApp
+        var phoneDisplay = u.phone ? u.phone : '—';
+        var waLink = '';
+        if (u.phone && u.phone.length >= 10) {
+          var cleanP = u.phone.replace(/[^0-9]/g, '');
+          if (cleanP.length === 10) cleanP = '91' + cleanP;
+          waLink = '<a href="https://web.whatsapp.com/send?phone=' + cleanP + '" target="_blank" class="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-medium ml-1.5"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></a>';
+        }
+
+        // 3. License Badge
+        var badgeColor = u.license_badge_class || 'bg-zinc-100 text-zinc-700';
+        var expDisplay = u.valid_until ? u.valid_until : (isMasterAdmin ? 'Lifetime Admin' : 'Unlimited');
+        var daysLeftText = u.license_label || '';
+
+        // 4. Toggle active checkbox
+        var toggleChecked = u.is_active ? 'checked' : '';
+        var toggleDisabled = isMasterAdmin ? 'disabled title="Cannot deactivate master admin"' : '';
+
+        tr.innerHTML = `
+          <td class="py-3.5 px-4">
+            <div class="font-bold text-zinc-900 dark:text-zinc-100">${agencyDisplay}</div>
+            <div class="text-[11px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1 mt-0.5">
+              <span>${nameDisplay}</span>
+              ${isMasterAdmin ? '<span class="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-500 font-mono text-[9px] font-bold">SUPER ADMIN</span>' : ''}
+            </div>
+            ${u.notes ? '<div class="text-[10px] text-zinc-400 mt-0.5 truncate max-w-xs">📝 ' + u.notes + '</div>' : ''}
+          </td>
+          <td class="py-3.5 px-4 font-mono font-medium text-zinc-700 dark:text-zinc-300">
+            ${u.username}
+          </td>
+          <td class="py-3.5 px-4 text-zinc-600 dark:text-zinc-400">
+            <span>${phoneDisplay}</span>${waLink}
+          </td>
+          <td class="py-3.5 px-4">
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${badgeColor}">
+              <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+              <span>${daysLeftText}</span>
+            </div>
+            <div class="text-[10px] text-zinc-400 font-mono mt-0.5">Valid: ${expDisplay}</div>
+          </td>
+          <td class="py-3.5 px-4 text-center">
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" onchange="toggleUserStatus(${u.id}, this.checked)" ${toggleChecked} ${toggleDisabled} class="sr-only peer">
+              <div class="w-8 h-4 bg-zinc-300 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all dark:border-zinc-600 peer-checked:bg-emerald-500"></div>
+            </label>
+          </td>
+          <td class="py-3.5 px-4 text-right">
+            <div class="inline-flex items-center gap-1.5 justify-end">
+              ${!isMasterAdmin ? `
+                <button onclick="openRenewModal(${u.id})" class="p-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 transition shadow-2xs" title="लायसन्स कालावधी वाढवा (+Renew)">
+                  <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                </button>
+              ` : ''}
+              <button onclick="openEditUserModal(${u.id})" class="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition" title="माहिती / पासवर्ड बदला (Edit)">
+                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+              </button>
+              ${!isMasterAdmin ? `
+                <button onclick="handleDeleteUser(${u.id}, '${u.username}')" class="p-1.5 rounded-lg border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition" title="खाते डिलीट करा (Delete)">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              ` : ''}
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      lucide.createIcons();
+    }
+
+    // Status Toggle
+    function toggleUserStatus(uid, isActive) {
+      fetch('/api/users/' + uid, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: isActive })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res.error) throw new Error(res.error);
+        showToast(res.message || 'Status updated');
+        loadAdminDashboard();
+      })
+      .catch(function(err) {
+        showToast(err.message, 'error');
+        loadAdminDashboard();
+      });
+    }
+
+    // Add Modal Helpers
+    function openAddUserModal() {
+      document.getElementById('addUserForm').reset();
+      setExpiryDays(365); // Default 1 year
+      document.getElementById('addUserModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+    function closeAddUserModal() {
+      document.getElementById('addUserModal').classList.add('hidden');
+    }
+
+    function handleCreateUser(e) {
+      e.preventDefault();
+      var payload = {
+        agency_name: document.getElementById('new_agency_name').value.trim(),
+        full_name: document.getElementById('new_full_name').value.trim(),
+        username: document.getElementById('new_username').value.trim().toLowerCase(),
+        password: document.getElementById('new_password').value.trim(),
+        phone: document.getElementById('new_phone').value.trim(),
+        valid_until: document.getElementById('new_valid_until').value.trim() || null,
+        notes: document.getElementById('new_notes').value.trim(),
+        role: 'staff'
+      };
+
+      fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res.error) throw new Error(res.error);
+        showToast(res.message || 'Client account created successfully!');
+        closeAddUserModal();
+        loadAdminDashboard();
+      })
+      .catch(function(err) {
+        showToast(err.message, 'error');
+      });
+    }
+
+    // Renew Modal Helpers
+    function openRenewModal(uid) {
+      var user = allUsers.find(function(u) { return u.id === uid; });
+      if (!user) return;
+      document.getElementById('renewUserId').value = uid;
+      document.getElementById('renewModalUserSubtitle').innerText = (user.agency_name || user.username) + ' (' + user.username + ')';
+      document.getElementById('renewCurrentExpiry').innerText = user.valid_until ? user.valid_until : 'Unlimited / None';
+      document.getElementById('renewCustomDate').value = '';
+      document.getElementById('renewModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+    function closeRenewModal() {
+      document.getElementById('renewModal').classList.add('hidden');
+    }
+
+    function executeRenewByDays(days) {
+      var uid = document.getElementById('renewUserId').value;
+      fetch('/api/users/' + uid + '/renew', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ days: days })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res.error) throw new Error(res.error);
+        showToast(res.message);
+        closeRenewModal();
+        loadAdminDashboard();
+      })
+      .catch(function(err) {
+        showToast(err.message, 'error');
+      });
+    }
+
+    function executeRenewByCustomDate() {
+      var uid = document.getElementById('renewUserId').value;
+      var dateVal = document.getElementById('renewCustomDate').value;
+      if (!dateVal) {
+        showToast('Please select a valid date', 'error');
+        return;
+      }
+      fetch('/api/users/' + uid + '/renew', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ valid_until: dateVal })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res.error) throw new Error(res.error);
+        showToast(res.message);
+        closeRenewModal();
+        loadAdminDashboard();
+      })
+      .catch(function(err) {
+        showToast(err.message, 'error');
+      });
+    }
+
+    // Edit Modal Helpers
+    function openEditUserModal(uid) {
+      var user = allUsers.find(function(u) { return u.id === uid; });
+      if (!user) return;
+      document.getElementById('edit_user_id').value = uid;
+      document.getElementById('editModalUserSubtitle').innerText = user.username;
+      document.getElementById('edit_agency_name').value = user.agency_name || '';
+      document.getElementById('edit_full_name').value = user.full_name || '';
+      document.getElementById('edit_phone').value = user.phone || '';
+      document.getElementById('edit_password').value = '';
+      document.getElementById('edit_notes').value = user.notes || '';
+      document.getElementById('editUserModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+    function closeEditUserModal() {
+      document.getElementById('editUserModal').classList.add('hidden');
+    }
+
+    function handleUpdateUser(e) {
+      e.preventDefault();
+      var uid = document.getElementById('edit_user_id').value;
+      var payload = {
+        agency_name: document.getElementById('edit_agency_name').value.trim(),
+        full_name: document.getElementById('edit_full_name').value.trim(),
+        phone: document.getElementById('edit_phone').value.trim(),
+        notes: document.getElementById('edit_notes').value.trim()
+      };
+      var pwd = document.getElementById('edit_password').value.trim();
+      if (pwd) payload.password = pwd;
+
+      fetch('/api/users/' + uid, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res.error) throw new Error(res.error);
+        showToast(res.message || 'User updated successfully!');
+        closeEditUserModal();
+        loadAdminDashboard();
+      })
+      .catch(function(err) {
+        showToast(err.message, 'error');
+      });
+    }
+
+    // Delete User
+    function handleDeleteUser(uid, uname) {
+      if (!confirm('Are you sure you want to permanently delete client account "' + uname + '"?')) return;
+      fetch('/api/users/' + uid, {
+        method: 'DELETE'
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res.error) throw new Error(res.error);
+        showToast(res.message || 'User deleted');
+        loadAdminDashboard();
+      })
+      .catch(function(err) {
+        showToast(err.message, 'error');
+      });
+    }
+
+    // Initialize on Load
+    document.addEventListener('DOMContentLoaded', function() {
+      lucide.createIcons();
+      loadAdminDashboard();
+    });
+  </script>
+</body>
+</html>

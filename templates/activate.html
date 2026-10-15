@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PassWish — Product Activation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.441.0/dist/umd/lucide.min.js"></script>
+  <script>
+    (function() {
+      var t = localStorage.getItem('passwish_theme');
+      if (t === 'dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="/static/styles.css" onerror="this.onerror=null;this.href='../static/styles.css';">
+</head>
+<body class="bg-zinc-50 text-zinc-900 font-sans antialiased min-h-screen flex flex-col items-center justify-center p-4 selection:bg-zinc-200">
+
+  <!-- Theme Toggle Button -->
+  <button onclick="toggleTheme()" class="fixed top-4 right-4 p-2 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 transition shadow-xs text-zinc-700" title="Toggle Light / Dark Mode">
+    <i id="themeToggleIcon" data-lucide="moon" class="w-4 h-4"></i>
+  </button>
+
+  <div class="max-w-md w-full space-y-6">
+    <!-- Brand Header -->
+    <div class="text-center space-y-2">
+      <div class="w-12 h-12 rounded-xl bg-zinc-900 text-white mx-auto flex items-center justify-center shadow-xs">
+        <i data-lucide="shield-check" class="w-6 h-6"></i>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight text-zinc-900">PassWish Activation</h1>
+      <p class="text-xs text-zinc-500">Hardware-locked commercial license required to run this software</p>
+    </div>
+
+    <!-- Activation Card -->
+    <div class="bg-white border border-zinc-200 rounded-xl p-6 shadow-xs space-y-4">
+      
+      <!-- Status Notice -->
+      <div id="statusNotice" class="hidden p-3 rounded-lg text-xs flex items-start gap-2">
+        <i data-lucide="alert-circle" id="statusIcon" class="w-4 h-4 shrink-0 mt-0.5"></i>
+        <span id="statusMessage">Notice</span>
+      </div>
+
+      <!-- Step 1: Your Machine ID -->
+      <div class="space-y-1.5">
+        <div class="flex justify-between items-center">
+          <label class="text-xs font-semibold text-zinc-700">1. Your Computer's Unique Machine ID:</label>
+          <span class="text-[10px] text-zinc-400 font-medium">Hardware Bound</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="text" id="machineIdInput" readonly value="{{ machine_id }}" class="w-full bg-zinc-100 border border-zinc-200 text-zinc-900 font-mono font-bold text-xs rounded-lg px-3 py-2.5 focus:outline-none select-all text-center tracking-wider">
+          <button type="button" onclick="copyMachineId()" id="btnCopyMid" class="px-3 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5 whitespace-nowrap shadow-xs">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span id="copyBtnText">Copy</span>
+          </button>
+        </div>
+        <p class="text-[11px] text-zinc-500 mt-1">
+          Send this Machine ID to your software provider on WhatsApp to receive your official license key.
+        </p>
+      </div>
+
+      <div class="border-t border-zinc-100 pt-3"></div>
+
+      <!-- Step 2: Enter License Key -->
+      <form onsubmit="submitActivation(event)" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block font-semibold text-zinc-700 mb-1">2. Enter Activation License Key:</label>
+          <textarea id="licenseKeyInput" rows="3" required placeholder="Paste your LIC-... key here" class="w-full border border-zinc-200 rounded-lg p-2.5 text-xs font-mono focus:outline-none focus:border-zinc-900 leading-relaxed"></textarea>
+        </div>
+
+        <button type="submit" id="btnActivate" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg text-xs transition flex items-center justify-center gap-1.5 shadow-xs">
+          <i data-lucide="key" class="w-3.5 h-3.5"></i>
+          <span>Activate PassWish</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- Security & Anti-Piracy Notice -->
+    <div class="bg-zinc-100 border border-zinc-200 rounded-lg p-3 text-[11px] text-zinc-600 space-y-1">
+      <div class="flex items-center gap-1.5 font-semibold text-zinc-800">
+        <i data-lucide="lock" class="w-3.5 h-3.5 text-zinc-600"></i>
+        <span>Single-Computer License Security:</span>
+      </div>
+      <p class="text-zinc-500 leading-relaxed">
+        This license key is cryptographically locked exclusively to this PC's hardware. It will not work if transferred to another computer or pendrive.
+      </p>
+    </div>
+
+    <div class="text-center text-[11px] text-zinc-400">
+      PassWish &copy; 2026 &bull; Customer CRM & Automated Wishes
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    function copyMachineId() {
+      const input = document.getElementById('machineIdInput');
+      input.select();
+      navigator.clipboard.writeText(input.value).then(() => {
+        const btnText = document.getElementById('copyBtnText');
+        btnText.innerText = 'Copied! ✓';
+        setTimeout(() => { btnText.innerText = 'Copy'; }, 2500);
+      });
+    }
+
+    async function submitActivation(e) {
+      e.preventDefault();
+      const key = document.getElementById('licenseKeyInput').value.trim();
+      const btn = document.getElementById('btnActivate');
+      const notice = document.getElementById('statusNotice');
+      const msg = document.getElementById('statusMessage');
+
+      if (!key) return;
+
+      btn.disabled = true;
+      btn.innerHTML = `<span class="animate-pulse">Validating license...</span>`;
+
+      try {
+        const res = await fetch('/api/license/activate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ license_key: key })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.status === 'success') {
+          notice.className = 'p-3 rounded-lg text-xs flex items-start gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800';
+          msg.innerHTML = `<strong>Activation Successful!</strong> Licensed to: ${data.client_name || 'Client'}. Redirecting to dashboard...`;
+          notice.classList.remove('hidden');
+          lucide.createIcons();
+
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1500);
+        } else {
+          notice.className = 'p-3 rounded-lg text-xs flex items-start gap-2 bg-red-50 border border-red-200 text-red-800';
+          msg.innerText = data.error || 'Activation failed. Please check the license key.';
+          notice.classList.remove('hidden');
+          btn.disabled = false;
+          btn.innerHTML = `<i data-lucide="key" class="w-3.5 h-3.5"></i><span>Activate PassWish</span>`;
+          lucide.createIcons();
+        }
+      } catch (err) {
+        notice.className = 'p-3 rounded-lg text-xs flex items-start gap-2 bg-red-50 border border-red-200 text-red-800';
+        msg.innerText = 'Server error: ' + err.message;
+        notice.classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="key" class="w-3.5 h-3.5"></i><span>Activate PassWish</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    function toggleTheme() {
+      var isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('passwish_theme', isDark ? 'dark' : 'light');
+      updateThemeIcon(isDark);
+    }
+    function updateThemeIcon(isDark) {
+      var icon = document.getElementById('themeToggleIcon');
+      if (icon) {
+        icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+        lucide.createIcons();
+      }
+    }
+    updateThemeIcon(document.documentElement.classList.contains('dark'));
+  </script>
+</body>
+</html>

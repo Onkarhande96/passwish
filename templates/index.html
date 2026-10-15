@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PassWish — Customer CRM & Automated Wishes</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons (CDN with valid source map) -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.441.0/dist/umd/lucide.min.js"></script>
+  <script>
+    (function() {
+      var t = localStorage.getItem('passwish_theme');
+      if (t === 'dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    })();
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="/static/styles.css" onerror="this.onerror=null;this.href='../static/styles.css';">
+</head>
+<body class="bg-zinc-50 text-zinc-900 font-sans antialiased min-h-screen flex flex-col selection:bg-zinc-200">
+
+  <!-- Local File Notice (only shows if user opened index.html directly via file:// instead of http://127.0.0.1:5000) -->
+  <div id="fileProtocolNotice" class="hidden bg-amber-500 text-white px-4 py-2.5 text-xs font-medium text-center shadow-xs">
+    ⚠️ <strong>Important:</strong> You opened PassWish directly as a file (<code class="bg-amber-600 px-1 py-0.5 rounded font-mono">file://</code>). 
+    To connect to the database, login, and send wishes, please run <code class="bg-amber-600 px-1 py-0.5 rounded font-mono">python app.py</code> (or double-click <strong>run_app.bat</strong>) and open 
+    <a href="http://127.0.0.1:5000" target="_blank" class="underline font-bold text-white ml-1">http://127.0.0.1:5000</a>!
+  </div>
+
+  <!-- Top Minimalist Header -->
+  <header class="bg-white border-b border-zinc-200 sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="flex justify-between items-center h-14">
+        <!-- Brand -->
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('dashboard')">
+          <div class="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center text-white">
+            <i data-lucide="compass" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-sm tracking-tight text-zinc-900">PassWish</span>
+              <span id="navShopBadge" class="hidden text-xs text-zinc-500 font-normal">
+                &bull; <span id="navShopNameDisplay">My Shop</span>
+              </span>
+              <span id="dbBadge" class="text-[11px] px-1.5 py-0.5 rounded font-medium bg-zinc-100 text-zinc-600 border border-zinc-200">
+                <span id="dbTypeName">Local SQLite</span>
+              </span>
+              <span id="licBadge" class="hidden text-[11px] px-1.5 py-0.5 rounded font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                <i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i>
+                <span id="licBadgeText">Licensed</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions & User Profile -->
+        <div class="flex items-center space-x-2">
+          <button onclick="openAddCustomerModal()" class="text-xs font-medium px-3 py-1.5 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 transition flex items-center gap-1.5 shadow-xs">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+            <span>+ Add Customer</span>
+          </button>
+          
+          <button onclick="switchTab('upload')" class="text-xs font-medium px-3 py-1.5 rounded-md border border-zinc-200 hover:bg-zinc-50 transition flex items-center gap-1.5 text-zinc-700">
+            <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Import Excel</span>
+          </button>
+          
+          <button onclick="downloadBackup()" class="text-xs font-medium px-3 py-1.5 rounded-md border border-zinc-200 hover:bg-zinc-50 transition flex items-center gap-1.5 text-zinc-700">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Backup</span>
+          </button>
+
+          <!-- Current Logged In User Badge -->
+          <div id="currentUserBadge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100 border border-zinc-200 text-xs font-medium text-zinc-800">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span id="navUserName">Admin</span>
+            <span id="navUserRoleBadge" class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-zinc-200 text-zinc-700">admin</span>
+          </div>
+
+          <!-- Admin Portal Quick Link (Shown for Admin) -->
+          {% if current_user and current_user.role == 'admin' %}
+          <a href="/admin" id="adminPortalHeaderBtn" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 text-xs font-bold transition" title="Go to Admin Licensing Portal">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-600"></i>
+            <span class="hidden md:inline">Admin Portal</span>
+          </a>
+          {% endif %}
+
+          <!-- Light / Dark Mode Toggle Button -->
+          <button onclick="toggleTheme()" id="themeToggleBtn" class="p-1.5 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition flex items-center justify-center" title="Toggle Light / Dark Theme">
+            <i id="themeToggleIcon" data-lucide="moon" class="w-4 h-4"></i>
+          </button>
+
+          <button onclick="switchTab('profile')" class="p-1.5 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition" title="Profile & Shop Settings">
+            <i data-lucide="user" class="w-4 h-4"></i>
+          </button>
+
+          <a href="/logout" class="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-zinc-100 rounded-md transition" title="Sign Out">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- Clean Minimal Nav Bar -->
+      <nav class="flex space-x-1 overflow-x-auto scrollbar-none py-1 text-xs border-t border-zinc-100">
+        <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn active px-3 py-1.5 font-medium rounded-md text-zinc-600 hover:text-zinc-900 transition flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Overview
+        </button>
+        <button onclick="switchTab('customers')" id="tab-customers" class="tab-btn px-3 py-1.5 font-medium rounded-md text-zinc-600 hover:text-zinc-900 transition flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="users" class="w-3.5 h-3.5"></i> Customers
+        </button>
+        <button onclick="switchTab('upload')" id="tab-upload" class="tab-btn px-3 py-1.5 font-medium rounded-md text-zinc-600 hover:text-zinc-900 transition flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="upload" class="w-3.5 h-3.5"></i> Import & Append
+        </button>
+        <button onclick="switchTab('birthdays')" id="tab-birthdays" class="tab-btn px-3 py-1.5 font-medium rounded-md text-zinc-600 hover:text-zinc-900 transition flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="cake" class="w-3.5 h-3.5"></i> Birthday Wishes
+          <span id="badgeBdayNav" class="hidden text-[10px] bg-zinc-900 text-white font-semibold px-1.5 rounded-full">0</span>
+        </button>
+        <button onclick="switchTab('broadcast')" id="tab-broadcast" class="tab-btn px-3 py-1.5 font-medium rounded-md text-zinc-600 hover:text-zinc-900 transition flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="send" class="w-3.5 h-3.5"></i> Festival Broadcast
+        </button>
+        <button onclick="switchTab('expiries')" id="tab-expiries" class="tab-btn px-3 py-1.5 font-medium rounded-md text-zinc-600 hover:text-zinc-900 transition flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="clock" class="w-3.5 h-3.5"></i> Passport Expiry
+        </button>
+        <button onclick="switchTab('templates')" id="tab-templates" class="tab-btn px-3 py-1.5 font-medium rounded-md text-zinc-600 hover:text-zinc-900 transition flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Templates
+        </button>
+        <button onclick="switchTab('reports')" id="tab-reports" class="tab-btn px-3 py-1.5 font-medium rounded-md text-zinc-600 hover:text-zinc-900 transition flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i> Reports & Logs
+        </button>
+        <button onclick="switchTab('safety')" id="tab-safety" class="tab-btn px-3 py-1.5 font-medium rounded-md text-zinc-600 hover:text-zinc-900 transition flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="database" class="w-3.5 h-3.5"></i> Cloud & Safety
+        </button>
+        {% if current_user and current_user.role == 'admin' %}
+        <button onclick="switchTab('users')" id="tab-users" class="tab-btn hidden px-3 py-1.5 font-medium rounded-md text-zinc-600 hover:text-zinc-900 transition flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-blue-600"></i> Users & Staff
+        </button>
+        {% endif %}
+        <button onclick="switchTab('profile')" id="tab-profile" class="tab-btn px-3 py-1.5 font-medium rounded-md text-zinc-600 hover:text-zinc-900 transition flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="user-cog" class="w-3.5 h-3.5"></i> Profile & Shop
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Viewport -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full">
+
+    <!-- 1. DASHBOARD VIEW -->
+    <div id="view-dashboard" class="space-y-6">
+      <!-- Unconfigured Shop Alert -->
+      <div id="shopNameNotice" class="hidden bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs flex justify-between items-center text-amber-800">
+        <div class="flex items-center gap-2">
+          <i data-lucide="info" class="w-4 h-4 shrink-0 text-amber-600"></i>
+          <span>Your Shop Name is not yet set. Add your Shop Name in the <strong>Profile & Shop</strong> tab so it automatically appears on all greetings.</span>
+        </div>
+        <button onclick="switchTab('profile')" class="text-xs font-semibold underline hover:text-amber-900">Configure Now &rarr;</button>
+      </div>
+
+      <!-- Minimalist Header Banner -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-zinc-200 gap-3">
+        <div>
+          <h1 class="text-xl font-semibold tracking-tight text-zinc-900">Dashboard</h1>
+          <p class="text-xs text-zinc-500 mt-0.5">Manage customer records, send automated wishes, and track passport validity.</p>
+        </div>
+        <div class="text-xs text-zinc-500 font-mono" id="todayDateBadge">Today</div>
+      </div>
+
+      <!-- Minimal Metrics Grid -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="bg-white p-4 rounded-lg border border-zinc-200">
+          <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">Total Customers</span>
+          <p id="statTotalCustomers" class="text-2xl font-semibold text-zinc-900 mt-1">0</p>
+          <span class="text-[11px] text-zinc-400">Capacity: 10,000+</span>
+        </div>
+
+        <div class="bg-white p-4 rounded-lg border border-zinc-200 cursor-pointer hover:border-zinc-400 transition" onclick="switchTab('birthdays')">
+          <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">Birthdays Today</span>
+          <p id="statBirthdaysToday" class="text-2xl font-semibold text-zinc-900 mt-1">0</p>
+          <span class="text-[11px] text-zinc-500">Click to view & send</span>
+        </div>
+
+        <div class="bg-white p-4 rounded-lg border border-zinc-200">
+          <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">Birthdays This Week</span>
+          <p id="statBirthdaysWeek" class="text-2xl font-semibold text-zinc-900 mt-1">0</p>
+          <span class="text-[11px] text-zinc-400">Next 7 days</span>
+        </div>
+
+        <div class="bg-white p-4 rounded-lg border border-zinc-200 cursor-pointer hover:border-zinc-400 transition" onclick="switchTab('expiries')">
+          <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">Expiring in 6 Months</span>
+          <p id="statExpiries6M" class="text-2xl font-semibold text-zinc-900 mt-1">0</p>
+          <span class="text-[11px] text-zinc-500">Passport renewals</span>
+        </div>
+      </div>
+
+      <!-- Quick Sections -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Today's Birthday Spotlight -->
+        <div class="md:col-span-2 bg-white rounded-lg border border-zinc-200 p-5">
+          <div class="flex justify-between items-center mb-3">
+            <h2 class="text-sm font-semibold text-zinc-900">Today's Birthdays</h2>
+            <button onclick="switchTab('birthdays')" class="text-xs text-zinc-500 hover:text-zinc-900 font-medium">View all &rarr;</button>
+          </div>
+          <div id="dashTodayBirthdayList" class="space-y-2">
+            <div class="text-center py-8 text-zinc-400 text-xs">No birthdays recorded for today.</div>
+          </div>
+        </div>
+
+        <!-- Right Side: Clean Actions -->
+        <div class="space-y-3">
+          <div class="bg-white rounded-lg border border-zinc-200 p-4">
+            <h3 class="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
+              <i data-lucide="user-plus" class="w-3.5 h-3.5 text-zinc-700"></i> Add Single Customer
+            </h3>
+            <p class="text-xs text-zinc-500 mt-1 mb-3">Manually enter a walk-in client with DOB, passport number, and expiry date.</p>
+            <button onclick="openAddCustomerModal()" class="w-full text-xs font-medium py-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white transition flex items-center justify-center gap-1.5 shadow-xs">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Customer
+            </button>
+          </div>
+
+          <div class="bg-white rounded-lg border border-zinc-200 p-4">
+            <h3 class="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
+              <i data-lucide="upload" class="w-3.5 h-3.5 text-zinc-700"></i> Weekly Excel Append
+            </h3>
+            <p class="text-xs text-zinc-500 mt-1 mb-3">Upload your weekly customer additions. Existing phone numbers are automatically deduplicated.</p>
+            <button onclick="switchTab('upload')" class="w-full text-xs font-medium py-2 rounded-md border border-zinc-200 hover:bg-zinc-50 text-zinc-800 transition">
+              Upload Excel Sheet
+            </button>
+          </div>
+
+          <div class="bg-white rounded-lg border border-zinc-200 p-4">
+            <h3 class="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
+              <i data-lucide="store" class="w-3.5 h-3.5 text-zinc-700"></i> Profile & Shop Name
+            </h3>
+            <p class="text-xs text-zinc-500 mt-1 mb-3">Set your shop name, contact number, and update login password.</p>
+            <button onclick="switchTab('profile')" class="w-full text-xs font-medium py-2 rounded-md border border-zinc-200 hover:bg-zinc-50 text-zinc-800 transition">
+              Edit Shop Profile
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. CUSTOMERS DIRECTORY -->
+    <div id="view-customers" class="hidden space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <h2 class="text-base font-semibold text-zinc-900">Customers (<span id="custTotalCount">0</span>)</h2>
+          <p class="text-xs text-zinc-500">Searchable database with fast pagination and filtering.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="openAddCustomerModal()" class="text-xs font-medium px-3 py-1.5 bg-zinc-900 text-white hover:bg-zinc-800 rounded-md transition flex items-center gap-1.5">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Customer
+          </button>
+          <button onclick="downloadBackup()" class="text-xs font-medium px-3 py-1.5 border border-zinc-200 hover:bg-zinc-50 rounded-md transition text-zinc-700">
+            Export JSON
+          </button>
+          <button onclick="exportCustomersExcel()" class="text-xs font-medium px-3 py-1.5 border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 rounded-md transition flex items-center gap-1.5">
+            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Export Excel
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="bg-white p-3 rounded-lg border border-zinc-200 grid grid-cols-1 sm:grid-cols-5 gap-2">
+        <div class="relative">
+          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-zinc-400"></i>
+          <input type="text" id="custSearchInput" oninput="debounceCustomerSearch()" placeholder="Search name, phone, passport, city..." class="w-full pl-8 pr-3 py-1.5 border border-zinc-200 rounded-md text-xs focus:outline-none focus:border-zinc-400">
+        </div>
+        <div>
+          <select id="custMonthFilter" onchange="loadCustomers(1)" class="w-full py-1.5 px-2.5 border border-zinc-200 rounded-md text-xs focus:outline-none text-zinc-700">
+            <option value="">All Birth Months</option>
+            <option value="1">January</option>
+            <option value="2">February</option>
+            <option value="3">March</option>
+            <option value="4">April</option>
+            <option value="5">May</option>
+            <option value="6">June</option>
+            <option value="7">July</option>
+            <option value="8">August</option>
+            <option value="9">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+          </select>
+        </div>
+        <div>
+          <select id="custExpiryFilter" onchange="loadCustomers(1)" class="w-full py-1.5 px-2.5 border border-zinc-200 rounded-md text-xs focus:outline-none text-zinc-700">
+            <option value="">All Expiry Dates</option>
+            <option value="3m">Expiring in 3 Months</option>
+            <option value="6m">Expiring in 6 Months</option>
+            <option value="12m">Expiring in 1 Year</option>
+          </select>
+        </div>
+        <div>
+          <select id="custStatusFilter" onchange="loadCustomers(1)" class="w-full py-1.5 px-2.5 border border-zinc-200 rounded-md text-xs focus:outline-none text-zinc-700 font-medium">
+            <option value="all">All Pipeline Stages</option>
+            <option value="New">Stage: New</option>
+            <option value="Alert Sent">Stage: Alert Sent</option>
+            <option value="In Discussion">Stage: In Discussion</option>
+            <option value="Docs Collected">Stage: Docs Collected</option>
+            <option value="Appointment / Applied">Stage: Appointment</option>
+            <option value="Passport Delivered">Stage: Delivered</option>
+            <option value="Not Interested">Stage: Not Interested</option>
+          </select>
+        </div>
+        <div>
+          <select id="custWaFilter" onchange="loadCustomers(1)" class="w-full py-1.5 px-2.5 border border-zinc-200 rounded-md text-xs focus:outline-none text-zinc-700">
+            <option value="all">All WhatsApp Status</option>
+            <option value="active">Active WhatsApp Only</option>
+            <option value="no_whatsapp">No WhatsApp Flagged</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Customers Table -->
+      <div class="bg-white rounded-lg border border-zinc-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-zinc-200 text-left text-xs">
+            <thead class="bg-zinc-50 text-zinc-500 font-medium">
+              <tr>
+                <th class="px-4 py-2.5">Name</th>
+                <th class="px-4 py-2.5">Mobile</th>
+                <th class="px-4 py-2.5">Date of Birth</th>
+                <th class="px-4 py-2.5">Passport No</th>
+                <th class="px-4 py-2.5">Expiry Date</th>
+                <th class="px-4 py-2.5">Pipeline Stage</th>
+                <th class="px-4 py-2.5">City</th>
+                <th class="px-4 py-2.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="customersTableBody" class="divide-y divide-zinc-100 text-zinc-700 font-normal">
+              <tr>
+                <td colspan="8" class="text-center py-8 text-zinc-400">Loading customer records...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table Footer / Pagination -->
+        <div class="px-4 py-2.5 bg-zinc-50 border-t border-zinc-200 flex items-center justify-between text-xs text-zinc-500">
+          <span>Page <span id="custCurrentPage" class="font-medium text-zinc-800">1</span> of <span id="custTotalPages" class="font-medium text-zinc-800">1</span></span>
+          <div class="flex items-center gap-1">
+            <button id="custBtnPrev" onclick="changeCustomerPage(-1)" class="px-2.5 py-1 border border-zinc-200 rounded text-zinc-700 hover:bg-zinc-100 disabled:opacity-40">Previous</button>
+            <button id="custBtnNext" onclick="changeCustomerPage(1)" class="px-2.5 py-1 border border-zinc-200 rounded text-zinc-700 hover:bg-zinc-100 disabled:opacity-40">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. EXCEL IMPORT & SMART APPEND -->
+    <div id="view-upload" class="hidden space-y-5">
+      <div class="bg-white p-6 rounded-lg border border-zinc-200 max-w-3xl">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <h2 class="text-base font-semibold text-zinc-900">Weekly Excel Import & Append</h2>
+            <p class="text-xs text-zinc-500 mt-0.5">Upload your initial 10,000 customers sheet or weekly additions. Column headers are auto-detected.</p>
+          </div>
+          <a href="/api/template/sample-excel" class="text-xs font-medium px-3 py-1.5 border border-zinc-300 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 rounded-md transition flex items-center gap-1.5 shadow-xs whitespace-nowrap">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> Download Sample Excel
+          </a>
+        </div>
+
+        <!-- Dropzone -->
+        <div class="mt-4 border border-dashed border-zinc-300 rounded-lg p-8 text-center cursor-pointer hover:border-zinc-500 hover:bg-zinc-50 transition" onclick="document.getElementById('excelFileInput').click()">
+          <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileSelected(event)">
+          <i data-lucide="file-spreadsheet" class="w-8 h-8 mx-auto text-zinc-400 mb-2"></i>
+          <p class="text-xs font-medium text-zinc-800" id="uploadFileTitle">Click to choose Excel/CSV file or drag and drop</p>
+          <p class="text-[11px] text-zinc-400 mt-1">Supports .xlsx, .xls, and .csv</p>
+          <span id="selectedFileBadge" class="hidden text-xs bg-zinc-100 text-zinc-800 border border-zinc-200 px-2 py-0.5 rounded mt-2 inline-block font-mono"></span>
+        </div>
+
+        <!-- Mode selector -->
+        <div class="mt-4 bg-zinc-50 p-3.5 rounded-lg border border-zinc-200">
+          <span class="text-xs font-semibold text-zinc-700 block mb-2">Append Strategy:</span>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+            <label class="flex items-center gap-2 p-2 bg-white rounded border border-zinc-200 cursor-pointer">
+              <input type="radio" name="importMode" value="append_new" checked class="text-zinc-900">
+              <div>
+                <p class="font-medium text-zinc-800">Append New Only</p>
+                <p class="text-[10px] text-zinc-400">Skip duplicates (Recommended)</p>
+              </div>
+            </label>
+            <label class="flex items-center gap-2 p-2 bg-white rounded border border-zinc-200 cursor-pointer">
+              <input type="radio" name="importMode" value="update_existing" class="text-zinc-900">
+              <div>
+                <p class="font-medium text-zinc-800">Update Existing</p>
+                <p class="text-[10px] text-zinc-400">Update existing phone records</p>
+              </div>
+            </label>
+            <label class="flex items-center gap-2 p-2 bg-white rounded border border-zinc-200 cursor-pointer">
+              <input type="radio" name="importMode" value="replace" class="text-zinc-900">
+              <div>
+                <p class="font-medium text-zinc-800">Full Replace</p>
+                <p class="text-[10px] text-zinc-400">Clear database and rewrite</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Preview Table -->
+        <div id="uploadPreviewSection" class="hidden mt-4 space-y-3">
+          <span class="text-xs font-semibold text-zinc-800">Preview (First 5 Rows):</span>
+          <div class="overflow-x-auto border border-zinc-200 rounded">
+            <table class="min-w-full text-xs text-left divide-y divide-zinc-200">
+              <thead class="bg-zinc-50 text-zinc-600 font-medium" id="previewTableHead"></thead>
+              <tbody class="divide-y divide-zinc-100 text-zinc-700" id="previewTableBody"></tbody>
+            </table>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button onclick="cancelUploadPreview()" class="px-3 py-1.5 text-xs text-zinc-600 border border-zinc-200 rounded hover:bg-zinc-50">Cancel</button>
+            <button onclick="executeUploadProcess()" id="btnStartImport" class="px-4 py-1.5 text-xs font-medium bg-zinc-900 text-white rounded hover:bg-zinc-800 flex items-center gap-1.5">
+              <i data-lucide="database" class="w-3.5 h-3.5"></i> Save / Append to Database
+            </button>
+          </div>
+        </div>
+
+        <!-- Results Card -->
+        <div id="uploadResultCard" class="hidden mt-4 p-4 rounded-lg border border-zinc-200 bg-zinc-50 space-y-2">
+          <span class="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
+            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i> Import process completed successfully!
+          </span>
+          <div class="grid grid-cols-4 gap-2 text-xs pt-1">
+            <div class="bg-white p-2.5 rounded border border-zinc-200">
+              <span class="text-zinc-400 text-[10px] uppercase">Total Rows</span>
+              <p id="resTotalRows" class="text-sm font-semibold text-zinc-900">0</p>
+            </div>
+            <div class="bg-white p-2.5 rounded border border-zinc-200">
+              <span class="text-zinc-400 text-[10px] uppercase">Added</span>
+              <p id="resAdded" class="text-sm font-semibold text-emerald-600">0</p>
+            </div>
+            <div class="bg-white p-2.5 rounded border border-zinc-200">
+              <span class="text-zinc-400 text-[10px] uppercase">Duplicates Skipped</span>
+              <p id="resSkipped" class="text-sm font-semibold text-amber-600">0</p>
+            </div>
+            <div class="bg-white p-2.5 rounded border border-zinc-200">
+              <span class="text-zinc-400 text-[10px] uppercase">Total in Database</span>
+              <p id="resFinalTotal" class="text-sm font-semibold text-zinc-900">0</p>
+            </div>
+          </div>
+          <div class="pt-2">
+            <button onclick="switchTab('customers')" class="text-xs font-medium text-zinc-900 hover:underline">
+              View customer directory &rarr;
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. BIRTHDAY WISHES HUB -->
+    <div id="view-birthdays" class="hidden space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <h2 class="text-base font-semibold text-zinc-900">Birthday Wishes</h2>
+          <p class="text-xs text-zinc-500">Send personalized WhatsApp birthday wishes based on date.</p>
+        </div>
+
+        <div class="flex items-center gap-1 bg-zinc-100 p-0.5 rounded-md text-xs">
+          <button onclick="loadBirthdays('today')" id="bdayBtn-today" class="bday-filter-btn px-3 py-1 font-medium rounded text-zinc-800 bg-white shadow-xs">Today</button>
+          <button onclick="loadBirthdays('tomorrow')" id="bdayBtn-tomorrow" class="bday-filter-btn px-3 py-1 font-medium rounded text-zinc-500 hover:text-zinc-800">Tomorrow</button>
+          <button onclick="loadBirthdays('week')" id="bdayBtn-week" class="bday-filter-btn px-3 py-1 font-medium rounded text-zinc-500 hover:text-zinc-800">Next 7 Days</button>
+        </div>
+      </div>
+
+      <!-- Template selector & Auto Queue bar -->
+      <div class="bg-white p-3 rounded-lg border border-zinc-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex items-center gap-2">
+          <span class="text-zinc-500 font-medium">Selected Template:</span>
+          <select id="bdayTemplateSelect" onchange="loadBirthdays(currentBdayTimeframe)" class="py-1 px-2 border border-zinc-200 rounded text-xs focus:outline-none">
+          </select>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="startAutoQueue('birthday')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded text-xs transition flex items-center gap-1.5 shadow-xs">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+            <span>⚡ Start Auto Queue</span>
+          </button>
+          <button onclick="switchTab('templates')" class="text-zinc-500 hover:text-zinc-900 underline text-xs">Edit Templates</button>
+        </div>
+      </div>
+
+      <!-- Optional Birthday Poster Banner Attachment -->
+      <div class="bg-zinc-50 p-2.5 rounded-lg border border-zinc-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex items-center gap-2">
+          <i data-lucide="image" class="w-3.5 h-3.5 text-zinc-600"></i>
+          <span class="text-zinc-700 font-medium">Attach Birthday Greeting Card / Poster (Optional):</span>
+          <input type="file" id="birthdayPosterInput" accept="image/png,image/jpeg,image/webp" onchange="handlePosterUpload('birthday', event)" class="text-[11px] text-zinc-600 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[11px] file:font-medium file:bg-white file:border file:border-zinc-200 file:text-zinc-800 hover:file:bg-zinc-100 cursor-pointer">
+        </div>
+        <div id="birthdayPosterPreview" class="hidden flex items-center gap-2 bg-white px-2 py-1 rounded border border-zinc-200">
+          <img id="birthdayPosterImg" src="" class="w-6 h-6 object-cover rounded border border-zinc-100">
+          <span id="birthdayPosterName" class="text-[11px] font-medium text-zinc-700 truncate max-w-[120px]">bday.jpg</span>
+          <button type="button" onclick="removePoster('birthday')" class="text-red-500 hover:text-red-700 text-xs font-bold px-1">&times;</button>
+        </div>
+      </div>
+
+      <!-- Birthday Customer Cards -->
+      <div id="birthdayListContainer" class="space-y-2">
+        <div class="text-center py-8 text-zinc-400 text-xs">Loading birthdays...</div>
+      </div>
+    </div>
+
+    <!-- 5. FESTIVAL & DIWALI BROADCAST -->
+    <div id="view-broadcast" class="hidden space-y-4">
+      <div class="flex justify-between items-center pb-2">
+        <div>
+          <h2 class="text-base font-semibold text-zinc-900">Festival & Event Broadcast</h2>
+          <p class="text-xs text-zinc-500">Send personalized festival wishes (Diwali, New Year, etc.) to your customer base.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <!-- Settings Panel -->
+        <div class="bg-white p-4 rounded-lg border border-zinc-200 space-y-3.5 text-xs">
+          <div>
+            <label class="block font-medium text-zinc-700 mb-1">Festival / Event:</label>
+            <select id="broadcastFestivalSelect" onchange="handleFestivalSelectChange()" class="w-full border border-zinc-200 rounded p-1.5 focus:outline-none">
+              <option value="Diwali">Diwali (दीपावली)</option>
+              <option value="New Year">New Year (नवीन वर्ष)</option>
+              <option value="Ganesh Chaturthi">Ganesh Chaturthi (गणेशोत्सव)</option>
+              <option value="Eid">Eid</option>
+              <option value="custom">Custom Event Name...</option>
+            </select>
+          </div>
+
+          <div id="customFestivalInputWrapper" class="hidden">
+            <label class="block font-medium text-zinc-700 mb-1">Enter Event Name:</label>
+            <input type="text" id="customFestivalInput" placeholder="e.g. Makar Sankranti" class="w-full border border-zinc-200 rounded p-1.5">
+          </div>
+
+          <div>
+            <label class="block font-medium text-zinc-700 mb-1">Audience Filter:</label>
+            <select id="broadcastTargetSelect" onchange="handleAudienceChange()" class="w-full border border-zinc-200 rounded p-1.5 focus:outline-none">
+              <option value="all">All Customers</option>
+              <option value="city">Filter by City</option>
+              <option value="expiring_6m">Passports Expiring in 6 Months</option>
+            </select>
+          </div>
+
+          <div id="broadcastCityWrapper" class="hidden">
+            <label class="block font-medium text-zinc-700 mb-1">City Name:</label>
+            <input type="text" id="broadcastCityInput" placeholder="e.g. Pune or Mumbai" class="w-full border border-zinc-200 rounded p-1.5">
+          </div>
+
+          <div>
+            <label class="block font-medium text-zinc-700 mb-1">Template Preset:</label>
+            <select id="broadcastTemplateSelect" onchange="loadBroadcastTemplateBody()" class="w-full border border-zinc-200 rounded p-1.5 focus:outline-none">
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-medium text-zinc-700 mb-1">Message Content:</label>
+            <textarea id="broadcastBodyText" rows="6" class="w-full border border-zinc-200 rounded p-2 text-xs leading-relaxed focus:outline-none"></textarea>
+            <div class="flex flex-wrap gap-1 mt-1.5 text-[10px]">
+              <span class="text-zinc-400 py-0.5">Insert:</span>
+              <button type="button" onclick="insertTag('{name}')" class="bg-zinc-100 hover:bg-zinc-200 px-1.5 py-0.5 rounded text-zinc-700 font-mono">+ {name}</button>
+              <button type="button" onclick="insertTag('{shop_name}')" class="bg-zinc-100 hover:bg-zinc-200 px-1.5 py-0.5 rounded text-zinc-700 font-mono">+ {shop_name}</button>
+              <button type="button" onclick="insertTag('{shop_phone}')" class="bg-zinc-100 hover:bg-zinc-200 px-1.5 py-0.5 rounded text-zinc-700 font-mono">+ {shop_phone}</button>
+            </div>
+          </div>
+
+          <!-- Festival Poster Banner Attachment -->
+          <div class="bg-zinc-50 p-2.5 rounded border border-zinc-200 space-y-1.5">
+            <label class="block font-medium text-zinc-800 text-[11px] flex items-center gap-1">
+              <i data-lucide="image" class="w-3.5 h-3.5 text-zinc-600"></i> Festival Greeting Poster / Banner (Optional)
+            </label>
+            <input type="file" id="broadcastPosterInput" accept="image/png,image/jpeg,image/webp" onchange="handlePosterUpload('broadcast', event)" class="w-full text-[11px] text-zinc-600 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[11px] file:font-medium file:bg-white file:border file:border-zinc-200 file:text-zinc-800 hover:file:bg-zinc-100 cursor-pointer">
+            <div id="broadcastPosterPreview" class="hidden flex items-center justify-between p-1.5 bg-white rounded border border-zinc-200 mt-1">
+              <div class="flex items-center gap-2 truncate">
+                <img id="broadcastPosterImg" src="" class="w-8 h-8 object-cover rounded border border-zinc-100">
+                <span id="broadcastPosterName" class="text-[11px] font-medium text-zinc-700 truncate">poster.png</span>
+              </div>
+              <button type="button" onclick="removePoster('broadcast')" class="text-red-500 hover:text-red-700 text-xs font-bold px-1">&times;</button>
+            </div>
+            <p class="text-[10px] text-zinc-400">Attached image will be pasted into WhatsApp with your wish as caption.</p>
+          </div>
+
+          <button onclick="generateBroadcastPreview()" class="w-full py-2 bg-zinc-900 hover:bg-zinc-800 text-white font-medium rounded text-xs transition">
+            Generate Recipient Preview
+          </button>
+        </div>
+
+        <!-- Recipient List & Dispatcher -->
+        <div class="lg:col-span-2 space-y-3">
+          <div class="flex flex-wrap justify-between items-center gap-2 bg-white p-3 rounded-lg border border-zinc-200 text-xs">
+            <div class="flex items-center gap-3">
+              <span class="text-zinc-500">Recipients: <strong id="broadcastRecipientCount" class="text-zinc-900">0</strong></span>
+              <span class="text-zinc-400 hidden sm:inline">&bull; Sequential hands-free sending</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="startAutoQueue('broadcast')" id="btnBroadcastAutoQueue" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded text-xs transition flex items-center gap-1.5 shadow-xs">
+                <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+                <span>⚡ Start Auto Queue</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="broadcastPreviewList" class="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+            <div class="text-center py-12 text-zinc-400 border border-dashed border-zinc-200 rounded-lg text-xs">
+              Configure parameters on the left and click 'Generate Recipient Preview'.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. PASSPORT EXPIRY RADAR -->
+    <div id="view-expiries" class="hidden space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <h2 class="text-base font-semibold text-zinc-900">Passport Expiry Radar</h2>
+          <p class="text-xs text-zinc-500">Track upcoming passport renewals (international travel requires 6 months minimum validity).</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1 bg-zinc-100 p-0.5 rounded-md text-xs">
+            <button onclick="loadExpiries(3)" id="expBtn-3" class="exp-filter-btn px-3 py-1 font-medium rounded text-zinc-500 hover:text-zinc-800">3 Months</button>
+            <button onclick="loadExpiries(6)" id="expBtn-6" class="exp-filter-btn px-3 py-1 font-medium rounded text-zinc-800 bg-white shadow-xs">6 Months</button>
+            <button onclick="loadExpiries(12)" id="expBtn-12" class="exp-filter-btn px-3 py-1 font-medium rounded text-zinc-500 hover:text-zinc-800">1 Year</button>
+          </div>
+
+          <button onclick="startAutoQueue('expiry')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded text-xs transition flex items-center gap-1.5 shadow-xs">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+            <span>⚡ Start Auto Queue</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="expiryListContainer" class="space-y-2">
+        <div class="text-center py-8 text-zinc-400 text-xs">Checking validity dates...</div>
+      </div>
+    </div>
+
+    <!-- 7. TEMPLATES -->
+    <div id="view-templates" class="hidden space-y-4">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="text-base font-semibold text-zinc-900">Message Templates</h2>
+          <p class="text-xs text-zinc-500">Customizable greetings for Birthdays, Diwali, Festivals, and Renewal Alerts.</p>
+        </div>
+        <button onclick="openTemplateModal()" class="text-xs font-medium px-3 py-1.5 bg-zinc-900 text-white hover:bg-zinc-800 rounded-md transition flex items-center gap-1">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i> New Template
+        </button>
+      </div>
+
+      <div id="templatesListGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+
+    <!-- 8. REPORTS & LOGS -->
+    <div id="view-reports" class="hidden space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <h2 class="text-base font-semibold text-zinc-900">Reports & Dispatch Logs</h2>
+          <p class="text-xs text-zinc-500">Complete audit trail of all automated and manual WhatsApp messages, renewal alerts, and delivery history.</p>
+        </div>
+
+        <button onclick="exportReportsExcel()" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded text-xs transition flex items-center gap-1.5 shadow-xs">
+          <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+          <span>Export Styled Excel (.xlsx)</span>
+        </button>
+      </div>
+
+      <!-- Summary Stats Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+        <div class="bg-white p-3 rounded-lg border border-zinc-200">
+          <span class="text-zinc-400 text-[10px] uppercase font-semibold">Total Dispatched</span>
+          <p id="reportStatTotal" class="text-base font-bold text-zinc-900 mt-0.5">0</p>
+        </div>
+        <div class="bg-white p-3 rounded-lg border border-zinc-200">
+          <span class="text-zinc-400 text-[10px] uppercase font-semibold">Birthday Wishes</span>
+          <p id="reportStatBirthday" class="text-base font-bold text-zinc-900 mt-0.5">0</p>
+        </div>
+        <div class="bg-white p-3 rounded-lg border border-zinc-200">
+          <span class="text-zinc-400 text-[10px] uppercase font-semibold">Renewal Alerts</span>
+          <p id="reportStatExpiry" class="text-base font-bold text-zinc-900 mt-0.5">0</p>
+        </div>
+        <div class="bg-white p-3 rounded-lg border border-zinc-200">
+          <span class="text-zinc-400 text-[10px] uppercase font-semibold">Skipped / No WhatsApp</span>
+          <p id="reportStatSkipped" class="text-base font-bold text-amber-600 mt-0.5">0</p>
+        </div>
+      </div>
+
+      <!-- Filters Bar -->
+      <div class="bg-white p-3 rounded-lg border border-zinc-200 grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs">
+        <div class="relative">
+          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-zinc-400"></i>
+          <input type="text" id="reportSearchInput" oninput="debounceReportSearch()" placeholder="Search name or mobile..." class="w-full pl-8 pr-3 py-1.5 border border-zinc-200 rounded-md text-xs focus:outline-none focus:border-zinc-400">
+        </div>
+        <div>
+          <select id="reportCategoryFilter" onchange="loadReports(1)" class="w-full py-1.5 px-2.5 border border-zinc-200 rounded-md text-xs focus:outline-none text-zinc-700">
+            <option value="all">All Message Types</option>
+            <option value="birthday">Birthday Wishes</option>
+            <option value="expiry">Passport Renewal Alerts</option>
+            <option value="festival">Festival Broadcasts</option>
+            <option value="broadcast">General Broadcasts</option>
+          </select>
+        </div>
+        <div>
+          <select id="reportStatusFilter" onchange="loadReports(1)" class="w-full py-1.5 px-2.5 border border-zinc-200 rounded-md text-xs focus:outline-none text-zinc-700">
+            <option value="all">All Delivery Statuses</option>
+            <option value="sent">Sent Successfully</option>
+            <option value="skipped_no_whatsapp">Skipped (No WA in DB)</option>
+            <option value="failed_no_whatsapp">Skipped (Flagged by User)</option>
+            <option value="skipped_invalid">Skipped (Invalid Mobile)</option>
+          </select>
+        </div>
+        <div>
+          <select id="reportTimeframeFilter" onchange="loadReports(1)" class="w-full py-1.5 px-2.5 border border-zinc-200 rounded-md text-xs focus:outline-none text-zinc-700">
+            <option value="all">All Time History</option>
+            <option value="today">Sent Today</option>
+            <option value="week">Past 7 Days</option>
+            <option value="month">Past 30 Days</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Logs Table -->
+      <div class="bg-white rounded-lg border border-zinc-200 overflow-hidden text-xs">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-zinc-200 text-left">
+            <thead class="bg-zinc-50 text-zinc-500 font-medium">
+              <tr>
+                <th class="px-4 py-2.5">Date & Time</th>
+                <th class="px-4 py-2.5">Customer Name</th>
+                <th class="px-4 py-2.5">Mobile</th>
+                <th class="px-4 py-2.5">Message Type</th>
+                <th class="px-4 py-2.5">Message Preview</th>
+                <th class="px-4 py-2.5">Delivery Status</th>
+              </tr>
+            </thead>
+            <tbody id="reportLogsTableBody" class="divide-y divide-zinc-100 text-zinc-700 font-normal">
+              <tr>
+                <td colspan="6" class="text-center py-8 text-zinc-400">Loading audit logs...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table Footer / Pagination -->
+        <div class="px-4 py-2.5 bg-zinc-50 border-t border-zinc-200 flex items-center justify-between text-xs text-zinc-500">
+          <span>Page <span id="reportCurrentPage" class="font-medium text-zinc-800">1</span> of <span id="reportTotalPages" class="font-medium text-zinc-800">1</span></span>
+          <div class="flex items-center gap-1">
+            <button id="reportBtnPrev" onclick="changeReportPage(-1)" class="px-2.5 py-1 border border-zinc-200 rounded text-zinc-700 hover:bg-zinc-100 disabled:opacity-40">Previous</button>
+            <button id="reportBtnNext" onclick="changeReportPage(1)" class="px-2.5 py-1 border border-zinc-200 rounded text-zinc-700 hover:bg-zinc-100 disabled:opacity-40">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. CLOUD & SAFETY -->
+    <div id="view-safety" class="hidden space-y-5">
+      <div>
+        <h2 class="text-base font-semibold text-zinc-900">Data Safety & Cloud Sync</h2>
+        <p class="text-xs text-zinc-500">Prevent data loss with one-click full backup exports, restores, and cloud database access.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- 1-Click Backup Export -->
+        <div class="bg-white p-5 rounded-lg border border-zinc-200 space-y-3">
+          <h3 class="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
+            <i data-lucide="download" class="w-4 h-4 text-zinc-700"></i> Full Database Export
+          </h3>
+          <p class="text-xs text-zinc-500 leading-relaxed">
+            Download a timestamped snapshot of all customers, templates, and settings. Keep this file in Google Drive or a USB drive for zero data loss risk.
+          </p>
+          <button onclick="downloadBackup()" class="w-full text-xs font-medium py-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white transition flex items-center justify-center gap-1.5">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> Download Full Backup (.json)
+          </button>
+
+          <div class="pt-3 border-t border-zinc-100">
+            <span class="text-xs font-medium text-zinc-700 block mb-1">Restore Database from Backup:</span>
+            <input type="file" id="restoreFileInput" accept=".json" class="text-xs text-zinc-500 w-full mb-2">
+            <button onclick="executeRestore()" class="w-full text-xs font-medium py-1.5 rounded-md border border-zinc-200 hover:bg-zinc-50 text-zinc-800 transition">
+              Upload & Restore
+            </button>
+          </div>
+        </div>
+
+        <!-- Cloud Setup -->
+        <div class="bg-white p-5 rounded-lg border border-zinc-200 space-y-3">
+          <h3 class="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
+            <i data-lucide="cloud" class="w-4 h-4 text-zinc-700"></i> Cloud Multi-Device Sync
+          </h3>
+          <p class="text-xs text-zinc-500 leading-relaxed">
+            Connect a free PostgreSQL database from <strong>Supabase.com</strong> or <strong>Neon.tech</strong> so both your shop PC and mobile phone access the same live data simultaneously.
+          </p>
+          <div class="bg-zinc-50 p-2.5 rounded border border-zinc-200 text-[11px] text-zinc-600 space-y-1">
+            <p>1. Create a free project at <a href="https://supabase.com" target="_blank" class="text-blue-600 underline font-medium">Supabase.com</a></p>
+            <p>2. Copy the Connection URI.</p>
+            <p>3. Set <code class="font-mono bg-zinc-200 px-1 rounded text-zinc-800">DATABASE_URL</code> in environment variables.</p>
+          </div>
+          <p class="text-xs text-zinc-500">Current Status: <strong id="safetyDbStatus" class="text-zinc-800">Local SQLite</strong></p>
+        </div>
+      </div>
+
+      <!-- Snapshot logs -->
+      <div class="bg-white p-4 rounded-lg border border-zinc-200">
+        <h3 class="text-xs font-semibold text-zinc-900 mb-2">Automatic Pre-Import Snapshots</h3>
+        <p class="text-xs text-zinc-400 mb-3">Snapshots taken automatically before every weekly Excel append.</p>
+        <div id="snapshotListContainer" class="text-xs text-zinc-400">Loading...</div>
+      </div>
+    </div>
+
+    <!-- 9. PROFILE & SHOP SETTINGS (NEW VIEW) -->
+    <div id="view-profile" class="hidden space-y-6 max-w-2xl">
+      <div>
+        <h2 class="text-base font-semibold text-zinc-900">Profile & Shop Details</h2>
+        <p class="text-xs text-zinc-500">Insert your Shop Name and details here. They will automatically be included in client wishes and notifications.</p>
+      </div>
+
+      <!-- Shop Information Card -->
+      <div class="bg-white p-5 rounded-lg border border-zinc-200 space-y-4">
+        <h3 class="text-xs font-semibold text-zinc-900 flex items-center gap-1.5 pb-2 border-b border-zinc-100">
+          <i data-lucide="store" class="w-4 h-4 text-zinc-700"></i> Shop / Agency Details
+        </h3>
+        <form onsubmit="saveProfileDetails(event)" class="space-y-3 text-xs">
+          <div>
+            <label class="block font-medium text-zinc-800 mb-1">
+              Shop / Agency Name <span class="text-zinc-400 font-normal">(Used in message tag {shop_name})</span>
+            </label>
+            <input type="text" id="profileShopName" placeholder="Enter your shop name here..." class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-900">
+            <span class="text-[11px] text-zinc-400 mt-0.5 block">Leave blank or enter your real business name.</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-medium text-zinc-800 mb-1">Owner / Contact Name</label>
+              <input type="text" id="profileOwnerName" placeholder="e.g. Proprietor Name" class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-900">
+            </div>
+            <div>
+              <label class="block font-medium text-zinc-800 mb-1">Shop WhatsApp Phone <span class="text-zinc-400 font-normal">({shop_phone})</span></label>
+              <input type="text" id="profilePhone" placeholder="e.g. 9876543210" class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-900">
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-medium text-zinc-800 mb-1">Office Address <span class="text-zinc-400 font-normal">({shop_address})</span></label>
+            <input type="text" id="profileAddress" placeholder="e.g. Near City Passport Kendra, 1st Floor" class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-900">
+          </div>
+
+          <div class="pt-2">
+            <button type="submit" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white font-medium rounded text-xs transition flex items-center gap-1.5">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i> Save Shop Details
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Daily Morning Desktop Notification Settings Card -->
+      <div class="bg-white p-5 rounded-lg border border-zinc-200 space-y-4">
+        <div class="flex justify-between items-center pb-2 border-b border-zinc-100">
+          <h3 class="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
+            <i data-lucide="bell-ring" class="w-4 h-4 text-amber-600"></i> Daily Morning Desktop Notification
+          </h3>
+          <span class="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 font-semibold px-2 py-0.5 rounded-full">Windows Notification</span>
+        </div>
+        <p class="text-xs text-zinc-500 leading-relaxed">
+          Receive an automatic pop-up alert on your Windows desktop every morning reminding you of today's birthdays and imminent passport renewals. You can customize the exact time you want this alert to appear.
+        </p>
+        <div class="space-y-3 text-xs">
+          <div class="flex items-center justify-between p-3 bg-zinc-50 rounded-lg border border-zinc-200">
+            <div>
+              <span class="font-medium text-zinc-800 block">Enable Morning Notification</span>
+              <span class="text-[11px] text-zinc-400">Triggers a native Windows popup notification once daily.</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="settingReminderEnabled" class="sr-only peer" checked>
+              <div class="w-9 h-5 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-zinc-900"></div>
+            </label>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-medium text-zinc-800 mb-1">Preferred Notification Time (HH:MM)</label>
+              <input type="time" id="settingReminderTime" value="10:00" class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-900 text-xs">
+              <span class="text-[10px] text-zinc-400 mt-1 block">Default is 10:00 AM (Shop opening hours).</span>
+            </div>
+            <div class="flex flex-col justify-end">
+              <button type="button" onclick="testDesktopReminder()" id="btnTestReminder" class="w-full py-2 px-3 border border-zinc-200 hover:bg-zinc-50 text-zinc-800 font-medium rounded text-xs transition flex items-center justify-center gap-1.5">
+                <i data-lucide="bell" class="w-3.5 h-3.5 text-zinc-600"></i> Test Desktop Notification Now
+              </button>
+            </div>
+          </div>
+
+          <div class="pt-2">
+            <button type="button" onclick="saveReminderSettings()" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white font-medium rounded text-xs transition flex items-center gap-1.5">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i> Save Notification Preferences
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Appearance & Theme Card -->
+      <div class="bg-white p-5 rounded-lg border border-zinc-200 space-y-3">
+        <div class="flex justify-between items-center pb-2 border-b border-zinc-100">
+          <h3 class="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
+            <i data-lucide="palette" class="w-4 h-4 text-purple-600"></i> Website Appearance & Theme
+          </h3>
+          <span class="text-[10px] bg-purple-50 text-purple-700 border border-purple-200 font-semibold px-2 py-0.5 rounded-full">Light & Dark</span>
+        </div>
+        <p class="text-xs text-zinc-500">
+          Choose your preferred display theme. Dark theme reduces eye strain during late-night work, while Light theme is crisp for daytime use.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
+          <label class="flex items-center gap-2 p-2.5 bg-zinc-50 rounded-lg border border-zinc-200 cursor-pointer hover:border-zinc-400 transition">
+            <input type="radio" name="appTheme" id="themeRadioLight" value="light" onchange="handleThemeSelectChange(this.value)" class="text-zinc-900">
+            <div>
+              <p class="font-medium text-zinc-800">☀️ Light Theme</p>
+              <p class="text-[10px] text-zinc-400">Crisp white & clean</p>
+            </div>
+          </label>
+          <label class="flex items-center gap-2 p-2.5 bg-zinc-50 rounded-lg border border-zinc-200 cursor-pointer hover:border-zinc-400 transition">
+            <input type="radio" name="appTheme" id="themeRadioDark" value="dark" onchange="handleThemeSelectChange(this.value)" class="text-zinc-900">
+            <div>
+              <p class="font-medium text-zinc-800">🌙 Dark Theme</p>
+              <p class="text-[10px] text-zinc-400">Eye-friendly dark</p>
+            </div>
+          </label>
+          <label class="flex items-center gap-2 p-2.5 bg-zinc-50 rounded-lg border border-zinc-200 cursor-pointer hover:border-zinc-400 transition">
+            <input type="radio" name="appTheme" id="themeRadioSystem" value="system" onchange="handleThemeSelectChange(this.value)" class="text-zinc-900">
+            <div>
+              <p class="font-medium text-zinc-800">💻 System Auto</p>
+              <p class="text-[10px] text-zinc-400">Sync with Windows</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Account Password Security Card -->
+      <div class="bg-white p-5 rounded-lg border border-zinc-200 space-y-4">
+        <h3 class="text-xs font-semibold text-zinc-900 flex items-center gap-1.5 pb-2 border-b border-zinc-100">
+          <i data-lucide="lock" class="w-4 h-4 text-zinc-700"></i> Account Security & Login Password
+        </h3>
+        <form onsubmit="changeAccountPassword(event)" class="space-y-3 text-xs">
+          <div>
+            <label class="block font-medium text-zinc-800 mb-1">Current Password</label>
+            <input type="password" id="pwdCurrent" required placeholder="••••••••" class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-900">
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-medium text-zinc-800 mb-1">New Password</label>
+              <input type="password" id="pwdNew" required placeholder="At least 4 characters" class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-900">
+            </div>
+            <div>
+              <label class="block font-medium text-zinc-800 mb-1">Confirm New Password</label>
+              <input type="password" id="pwdConfirm" required placeholder="Repeat new password" class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-900">
+            </div>
+          </div>
+          <div class="pt-2">
+            <button type="submit" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-900 text-white font-medium rounded text-xs transition flex items-center gap-1.5">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Update Password
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- License Details Card -->
+      <div class="bg-white p-5 rounded-lg border border-zinc-200 space-y-3">
+        <div class="flex justify-between items-center pb-2 border-b border-zinc-100">
+          <h3 class="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
+            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i> Software License & Machine Binding
+          </h3>
+          <span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold px-2 py-0.5 rounded-full">Activated ✓</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div>
+            <span class="text-zinc-400 text-[10px] uppercase font-medium">Licensed Client</span>
+            <p id="licClientName" class="font-semibold text-zinc-800 mt-0.5">Valued Client</p>
+          </div>
+          <div>
+            <span class="text-zinc-400 text-[10px] uppercase font-medium">Validity Period</span>
+            <p id="licExpiry" class="font-semibold text-zinc-800 mt-0.5">Lifetime</p>
+          </div>
+          <div class="sm:col-span-2">
+            <span class="text-zinc-400 text-[10px] uppercase font-medium">Locked Machine ID</span>
+            <p id="licMachineId" class="font-mono text-[11px] text-zinc-600 bg-zinc-50 p-1.5 rounded border border-zinc-100 mt-0.5 select-all">PW-XXXX-XXXX-XXXX</p>
+          </div>
+        </div>
+        <p class="text-[10px] text-zinc-400 pt-1 border-t border-zinc-100">
+          Locked to this physical computer. Cannot be transferred to another PC without a new license key from the vendor.
+        </p>
+      </div>
+    </div>
+
+    {% if current_user and current_user.role == 'admin' %}
+    <!-- 10. USERS & STAFF MANAGEMENT VIEW (ADMIN ONLY) -->
+    <div id="view-users" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-zinc-200 gap-3">
+        <div>
+          <h1 class="text-xl font-semibold tracking-tight text-zinc-900">Users & Staff Management</h1>
+          <p class="text-xs text-zinc-500 mt-0.5">Secure multi-user role management. Add staff, manage permissions, and track activity.</p>
+        </div>
+        <div>
+          <button onclick="openAddUserModal()" class="text-xs font-medium px-3.5 py-2 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 transition flex items-center gap-1.5 shadow-xs">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+            <span>+ Add New User</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Users Statistics Card -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="bg-white p-4 rounded-lg border border-zinc-200">
+          <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">Total Users</span>
+          <p id="statTotalUsers" class="text-2xl font-semibold text-zinc-900 mt-1">1</p>
+          <span class="text-[11px] text-zinc-400">System Accounts</span>
+        </div>
+        <div class="bg-white p-4 rounded-lg border border-zinc-200">
+          <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">Administrators</span>
+          <p id="statAdminUsers" class="text-2xl font-semibold text-blue-600 mt-1">1</p>
+          <span class="text-[11px] text-zinc-400">Full Access Privileges</span>
+        </div>
+        <div class="bg-white p-4 rounded-lg border border-zinc-200">
+          <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">Staff / Consultants</span>
+          <p id="statStaffUsers" class="text-2xl font-semibold text-emerald-600 mt-1">0</p>
+          <span class="text-[11px] text-zinc-400">Customer & Wishes Access</span>
+        </div>
+      </div>
+
+      <!-- Users Table Card -->
+      <div class="bg-white rounded-lg border border-zinc-200 overflow-hidden">
+        <div class="p-3 border-b border-zinc-100 flex justify-between items-center gap-2">
+          <span class="text-xs font-semibold text-zinc-900">All System Accounts</span>
+          <button onclick="loadUsers()" class="text-xs text-zinc-600 hover:text-zinc-900 flex items-center gap-1">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-zinc-50 border-b border-zinc-200 text-zinc-500 font-medium">
+              <tr>
+                <th class="py-2.5 px-3">User</th>
+                <th class="py-2.5 px-3">Role</th>
+                <th class="py-2.5 px-3">Mobile</th>
+                <th class="py-2.5 px-3">Status</th>
+                <th class="py-2.5 px-3">Created Date</th>
+                <th class="py-2.5 px-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody" class="divide-y divide-zinc-100">
+              <tr><td colspan="6" class="text-center py-4 text-zinc-400">Loading users...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </main>
+
+  <!-- MODALS -->
+
+  <!-- Customer Modal -->
+  <div id="customerModal" class="hidden fixed inset-0 z-50 bg-zinc-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-md w-full p-5 shadow-lg space-y-3 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b border-zinc-100">
+        <h3 id="custModalTitle" class="font-semibold text-zinc-900 text-sm">Add New Customer</h3>
+        <button onclick="closeCustomerModal()" class="text-zinc-400 hover:text-zinc-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <form id="customerForm" onsubmit="submitCustomerForm(event)" class="space-y-2.5">
+        <input type="hidden" id="custFormId">
+        <div>
+          <label class="block font-medium text-zinc-700 mb-1">Customer Full Name *</label>
+          <input type="text" id="custFormName" required class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-400">
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <label class="block font-medium text-zinc-700 mb-1 flex items-center justify-between">
+              <span>Primary Mobile *</span>
+              <span class="text-[10px] text-emerald-600 font-semibold font-mono">Compulsory</span>
+            </label>
+            <input type="text" id="custFormPhone" required placeholder="10 digits or 91..." class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-400">
+          </div>
+          <div>
+            <label class="block font-medium text-zinc-700 mb-1 flex items-center justify-between">
+              <span>Secondary Mobile</span>
+              <span class="text-[10px] text-zinc-400 font-normal">Optional</span>
+            </label>
+            <input type="text" id="custFormPhone2" placeholder="Alternate 2nd number" class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-400">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-medium text-zinc-700 mb-1">Date of Birth (DOB)</label>
+            <input type="date" id="custFormDob" class="w-full border border-zinc-200 rounded p-2">
+          </div>
+          <div>
+            <label class="block font-medium text-zinc-700 mb-1">Passport Number</label>
+            <input type="text" id="custFormPassport" placeholder="e.g. P1234567" class="w-full border border-zinc-200 rounded p-2">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-medium text-zinc-700 mb-1">Passport Expiry Date</label>
+            <input type="date" id="custFormExpiry" class="w-full border border-zinc-200 rounded p-2">
+          </div>
+          <div>
+            <label class="block font-medium text-zinc-700 mb-1">City / Location</label>
+            <input type="text" id="custFormCity" placeholder="e.g. Pune" class="w-full border border-zinc-200 rounded p-2">
+          </div>
+        </div>
+        <div>
+          <label class="block font-medium text-zinc-700 mb-1">Notes</label>
+          <textarea id="custFormNotes" rows="2" class="w-full border border-zinc-200 rounded p-2"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeCustomerModal()" class="px-3 py-1.5 border border-zinc-200 rounded text-zinc-600 hover:bg-zinc-50">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded font-medium">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Template Modal -->
+  <div id="templateModal" class="hidden fixed inset-0 z-50 bg-zinc-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-lg w-full p-5 shadow-lg space-y-3 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b border-zinc-100">
+        <h3 id="tplModalTitle" class="font-semibold text-zinc-900 text-sm">Create Message Template</h3>
+        <button onclick="closeTemplateModal()" class="text-zinc-400 hover:text-zinc-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <form id="templateForm" onsubmit="submitTemplateForm(event)" class="space-y-2.5">
+        <input type="hidden" id="tplFormId">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-medium text-zinc-700 mb-1">Category *</label>
+            <select id="tplFormCategory" class="w-full border border-zinc-200 rounded p-2">
+              <option value="birthday">Birthday</option>
+              <option value="diwali">Diwali</option>
+              <option value="festival">Festival</option>
+              <option value="expiry">Passport Expiry</option>
+              <option value="general">General</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-medium text-zinc-700 mb-1">Template Name *</label>
+            <input type="text" id="tplFormName" required placeholder="e.g. Diwali Greeting" class="w-full border border-zinc-200 rounded p-2">
+          </div>
+        </div>
+        <div>
+          <label class="block font-medium text-zinc-700 mb-1">Message Body *</label>
+          <textarea id="tplFormBody" rows="6" required class="w-full border border-zinc-200 rounded p-2 leading-relaxed"></textarea>
+          <div class="flex flex-wrap gap-1 mt-1 text-[10px]">
+            <span class="text-zinc-400">Placeholders:</span>
+            <button type="button" onclick="insertTplTag('{name}')" class="bg-zinc-100 px-1 py-0.5 rounded font-mono">+ {name}</button>
+            <button type="button" onclick="insertTplTag('{shop_name}')" class="bg-zinc-100 px-1 py-0.5 rounded font-mono">+ {shop_name}</button>
+            <button type="button" onclick="insertTplTag('{shop_phone}')" class="bg-zinc-100 px-1 py-0.5 rounded font-mono">+ {shop_phone}</button>
+            <button type="button" onclick="insertTplTag('{expiry_date}')" class="bg-zinc-100 px-1 py-0.5 rounded font-mono">+ {expiry_date}</button>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 pt-1">
+          <input type="checkbox" id="tplFormDefault" class="rounded text-zinc-900">
+          <label for="tplFormDefault" class="text-zinc-700">Set as default template for this category</label>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeTemplateModal()" class="px-3 py-1.5 border border-zinc-200 rounded text-zinc-600 hover:bg-zinc-50">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded font-medium">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Auto Queue Dispatcher Modal -->
+  <div id="autoQueueModal" class="hidden fixed inset-0 z-50 bg-zinc-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl space-y-4 text-xs">
+      
+      <!-- Modal Header -->
+      <div class="flex justify-between items-center pb-3 border-b border-zinc-100">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200">
+            <i data-lucide="zap" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 id="queueModalTitle" class="font-bold text-zinc-900 text-sm">Automated WhatsApp Queue</h3>
+            <p id="queueModalSubtitle" class="text-zinc-500 text-[11px]">Sequential WhatsApp dispatch to filtered recipients</p>
+          </div>
+        </div>
+        <button onclick="stopAutoQueue()" class="text-zinc-400 hover:text-zinc-600 p-1" title="Close">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Main Queue Active Body -->
+      <div id="queueActiveContainer" class="space-y-4">
+        <!-- Hands-Free Automation Status Banner -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-900 flex items-start gap-2.5">
+          <i data-lucide="bot" class="w-4 h-4 text-blue-600 shrink-0 mt-0.5"></i>
+          <div>
+            <p class="font-semibold">Desktop Hands-Free Bot Active</p>
+            <p class="text-[11px] text-blue-700 mt-0.5">WhatsApp Web opens automatically, waits for chat to load, sends via Enter, and closes the tab. Please do not type while sending.</p>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="space-y-1.5 bg-zinc-50 p-3 rounded-lg border border-zinc-200">
+          <div class="flex justify-between text-[11px] text-zinc-600 font-medium">
+            <span id="queueProgressLabel">Contact 1 of 10</span>
+            <span id="queueProgressPercent">10%</span>
+          </div>
+          <div class="w-full h-2 bg-zinc-200 rounded-full overflow-hidden">
+            <div id="queueProgressBar" class="h-full bg-emerald-600 transition-all duration-300 rounded-full" style="width: 10%;"></div>
+          </div>
+        </div>
+
+        <!-- Current Recipient Card -->
+        <div class="border border-zinc-200 rounded-lg p-4 space-y-3 bg-white">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 id="queueContactName" class="font-bold text-zinc-900 text-sm">Customer Name</h4>
+              <p id="queueContactPhone" class="text-zinc-500 font-mono text-xs">919822012345</p>
+            </div>
+            <span id="queueStatusBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span id="queueStatusText">Sending Now</span>
+            </span>
+          </div>
+
+          <div>
+            <label class="block text-[10px] uppercase font-semibold text-zinc-400 mb-1">Message Body:</label>
+            <div id="queueMessagePreview" class="bg-zinc-50 p-3 rounded border border-zinc-200 text-zinc-700 font-sans text-xs whitespace-pre-line max-h-32 overflow-y-auto leading-relaxed">
+              Message text...
+            </div>
+          </div>
+        </div>
+
+        <!-- Delay Interval -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <div class="flex items-center gap-2">
+            <span class="text-zinc-500 text-[11px] font-medium">Sending Speed:</span>
+            <select id="queueDelaySelect" class="border border-zinc-200 rounded px-2 py-1 text-xs bg-white text-zinc-700 focus:outline-none">
+              <option value="4">4 sec (Ultra Fast &bull; ~10-12 msgs/min)</option>
+              <option value="5" selected>5 sec (Fast &bull; ~9-10 msgs/min - Recommended)</option>
+              <option value="7">7 sec (Balanced &bull; ~7-8 msgs/min)</option>
+              <option value="10">10 sec (Standard &bull; ~5-6 msgs/min)</option>
+            </select>
+          </div>
+          <span class="text-[11px] text-zinc-400">Fast hands-free auto tabs</span>
+        </div>
+      </div>
+
+      <!-- Queue Completed Card -->
+      <div id="queueCompletedCard" class="hidden text-center py-4 space-y-3">
+        <div class="w-11 h-11 rounded-full bg-emerald-100 text-emerald-700 mx-auto flex items-center justify-center font-bold text-lg">
+          ✓
+        </div>
+        <h4 class="font-bold text-zinc-900 text-base">Queue Completed!</h4>
+        <div class="grid grid-cols-2 gap-2 text-left max-w-xs mx-auto text-xs py-1">
+          <div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded-lg text-emerald-900">
+            <span class="text-[10px] uppercase font-bold text-emerald-700 block">Sent Successfully</span>
+            <span id="queueStatSentCount" class="text-base font-bold">0</span>
+          </div>
+          <div class="bg-amber-50 border border-amber-200 p-2.5 rounded-lg text-amber-900">
+            <span class="text-[10px] uppercase font-bold text-amber-700 block">Skipped / No WhatsApp</span>
+            <span id="queueStatSkippedCount" class="text-base font-bold">0</span>
+          </div>
+        </div>
+        <p id="queueCompletedStats" class="text-xs text-zinc-500"></p>
+        
+        <div id="queueSkippedListSection" class="hidden text-left border border-zinc-200 rounded-lg p-3 bg-zinc-50 space-y-2">
+          <div class="flex justify-between items-center text-xs font-semibold text-zinc-700">
+            <span>Skipped Numbers (Invalid / No WhatsApp):</span>
+            <button onclick="copySkippedList()" class="text-emerald-700 hover:underline text-[11px] font-medium flex items-center gap-1">
+              <i data-lucide="copy" class="w-3 h-3"></i> Copy List
+            </button>
+          </div>
+          <div id="queueSkippedItemsList" class="max-h-28 overflow-y-auto text-[11px] font-mono text-zinc-600 space-y-1"></div>
+        </div>
+
+        <div class="pt-1">
+          <button type="button" onclick="stopAutoQueue()" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-md text-xs font-medium">
+            Done & Close
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Controls -->
+      <div id="queueControlFooter" class="flex flex-wrap justify-between items-center gap-2 pt-3 border-t border-zinc-100">
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="skipCurrentContact()" class="px-3 py-1.5 bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-300 rounded font-medium text-xs flex items-center gap-1.5 transition" title="Mark this customer as No WhatsApp and advance immediately">
+            <i data-lucide="skip-forward" class="w-3.5 h-3.5 text-amber-600"></i>
+            <span>Skip (No WhatsApp)</span>
+          </button>
+          <button type="button" onclick="stopAutoQueue()" class="px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded font-medium text-xs flex items-center gap-1.5 transition">
+            <i data-lucide="square" class="w-3.5 h-3.5"></i>
+            <span>Stop Bot</span>
+          </button>
+        </div>
+
+        <span class="text-[11px] text-zinc-400">Emergency Stop: Move mouse to corner</span>
+      </div>
+
+    </div>
+  </div>
+
+  {% if current_user and current_user.role == 'admin' %}
+  <!-- Add User Modal (Admin Only) -->
+  <div id="addUserModal" class="hidden fixed inset-0 z-50 bg-zinc-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-md w-full p-5 shadow-lg space-y-3 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b border-zinc-100">
+        <h3 class="font-semibold text-zinc-900 text-sm flex items-center gap-1.5">
+          <i data-lucide="user-plus" class="w-4 h-4 text-blue-600"></i> Add New User / Staff
+        </h3>
+        <button onclick="closeAddUserModal()" class="text-zinc-400 hover:text-zinc-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <form onsubmit="submitAddUser(event)" class="space-y-3">
+        <div>
+          <label class="block font-medium text-zinc-700 mb-1">Full Name *</label>
+          <input type="text" id="addFullName" required placeholder="e.g. Ramesh Kadam" class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-900">
+        </div>
+        <div>
+          <label class="block font-medium text-zinc-700 mb-1">Login Username * (Unique)</label>
+          <input type="text" id="addUsername" required placeholder="e.g. ramesh" class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-900">
+          <span class="text-[10px] text-zinc-400">Used to sign in. Lowercase letters & numbers.</span>
+        </div>
+        <div>
+          <label class="block font-medium text-zinc-700 mb-1">Login Password *</label>
+          <input type="password" id="addPassword" required minlength="4" placeholder="••••••••" class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-900">
+          <span class="text-[10px] text-zinc-400">At least 4 characters.</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium text-zinc-700 mb-1">Role *</label>
+            <select id="addRole" class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-900 bg-white">
+              <option value="staff" selected>Staff / Consultant</option>
+              <option value="admin">Administrator (Full Access)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-medium text-zinc-700 mb-1">Mobile Number</label>
+            <input type="text" id="addPhone" placeholder="e.g. 9822012345" class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-900">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2 border-t border-zinc-100">
+          <button type="button" onclick="closeAddUserModal()" class="px-3 py-1.5 border border-zinc-200 rounded text-zinc-600 hover:bg-zinc-50">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded font-medium shadow-xs">Create User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit User Modal (Admin Only) -->
+  <div id="editUserModal" class="hidden fixed inset-0 z-50 bg-zinc-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-md w-full p-5 shadow-lg space-y-3 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b border-zinc-100">
+        <h3 class="font-semibold text-zinc-900 text-sm flex items-center gap-1.5">
+          <i data-lucide="user-cog" class="w-4 h-4 text-zinc-700"></i> Edit User Account
+        </h3>
+        <button onclick="closeEditUserModal()" class="text-zinc-400 hover:text-zinc-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <form onsubmit="submitEditUser(event)" class="space-y-3">
+        <input type="hidden" id="editUserId">
+        <div>
+          <label class="block font-medium text-zinc-700 mb-1">Username</label>
+          <input type="text" id="editUsername" disabled class="w-full border border-zinc-200 bg-zinc-100 text-zinc-500 rounded p-2">
+        </div>
+        <div>
+          <label class="block font-medium text-zinc-700 mb-1">Full Name</label>
+          <input type="text" id="editFullName" required class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-900">
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium text-zinc-700 mb-1">Role</label>
+            <select id="editRole" class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-900 bg-white">
+              <option value="staff">Staff / Consultant</option>
+              <option value="admin">Administrator</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-medium text-zinc-700 mb-1">Mobile Number</label>
+            <input type="text" id="editPhone" class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-900">
+          </div>
+        </div>
+        <div>
+          <label class="block font-medium text-zinc-700 mb-1">Reset Password <span class="text-zinc-400 font-normal">(Leave blank to keep unchanged)</span></label>
+          <input type="password" id="editPassword" placeholder="New password (optional)" class="w-full border border-zinc-200 rounded p-2 focus:outline-none focus:border-zinc-900">
+        </div>
+        <div class="flex items-center gap-2 pt-1">
+          <input type="checkbox" id="editIsActive" class="rounded text-zinc-900">
+          <label for="editIsActive" class="text-zinc-800 font-medium">Account is Active & Permitted to Login</label>
+        </div>
+        <div class="flex justify-end gap-2 pt-2 border-t border-zinc-100">
+          <button type="button" onclick="closeEditUserModal()" class="px-3 py-1.5 border border-zinc-200 rounded text-zinc-600 hover:bg-zinc-50">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded font-medium shadow-xs">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- WhatsApp Number Selection Modal (When Customer has 2 Phone Numbers) -->
+  <div id="waSelectModal" class="hidden fixed inset-0 z-50 bg-zinc-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-sm w-full p-5 shadow-2xl border border-zinc-200 space-y-4 text-xs">
+      <div class="flex justify-between items-start pb-2 border-b border-zinc-100">
+        <div>
+          <h3 class="font-bold text-zinc-900 text-sm flex items-center gap-1.5">
+            <i data-lucide="message-circle" class="w-4 h-4 text-emerald-600"></i>
+            <span>व्हॉट्सअ‍ॅप नंबर निवडा</span>
+          </h3>
+          <p id="waSelectCustName" class="text-xs text-zinc-500 mt-0.5 font-medium">Select recipient number</p>
+        </div>
+        <button onclick="closeWaSelectModal()" class="text-zinc-400 hover:text-zinc-600 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <div class="space-y-2">
+        <!-- Option 1: Primary Only -->
+        <button type="button" onclick="dispatchSelectedWa('primary')" class="w-full p-3 rounded-lg border border-zinc-200 hover:border-emerald-500 hover:bg-emerald-50/50 text-left transition flex items-center justify-between group">
+          <div>
+            <div class="font-semibold text-zinc-900 flex items-center gap-1.5">
+              <span>Primary Number (मुख्य नंबर)</span>
+              <span class="text-[9px] uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">1st</span>
+            </div>
+            <div id="waSelectPhone1" class="text-zinc-600 font-mono text-xs mt-0.5">+91 ...</div>
+          </div>
+          <i data-lucide="arrow-right" class="w-4 h-4 text-zinc-400 group-hover:text-emerald-600 transition"></i>
+        </button>
+
+        <!-- Option 2: Secondary Only -->
+        <button type="button" onclick="dispatchSelectedWa('secondary')" class="w-full p-3 rounded-lg border border-zinc-200 hover:border-blue-500 hover:bg-blue-50/50 text-left transition flex items-center justify-between group">
+          <div>
+            <div class="font-semibold text-zinc-900 flex items-center gap-1.5">
+              <span>Secondary Number (पर्यायी नंबर)</span>
+              <span class="text-[9px] uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-bold">2nd</span>
+            </div>
+            <div id="waSelectPhone2" class="text-zinc-600 font-mono text-xs mt-0.5">+91 ...</div>
+          </div>
+          <i data-lucide="arrow-right" class="w-4 h-4 text-zinc-400 group-hover:text-blue-600 transition"></i>
+        </button>
+
+        <!-- Option 3: Send to Both Numbers -->
+        <button type="button" onclick="dispatchSelectedWa('both')" class="w-full p-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-left transition flex items-center justify-between shadow-xs">
+          <div>
+            <div class="font-semibold text-white flex items-center gap-1.5">
+              <i data-lucide="layers" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>Send to BOTH Numbers (दोन्ही नंबरवर पाठवा)</span>
+            </div>
+            <div class="text-zinc-300 text-[10px] mt-0.5">Will open WhatsApp for Primary & Secondary</div>
+          </div>
+          <i data-lucide="send" class="w-4 h-4 text-emerald-400"></i>
+        </button>
+      </div>
+
+      <div class="text-center pt-1 border-t border-zinc-100">
+        <button type="button" onclick="closeWaSelectModal()" class="text-xs text-zinc-400 hover:text-zinc-600">Cancel / रद्द करा</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Web-Native WhatsApp Dispatch Queue Modal (Zero Client Dependencies) -->
+  <div id="webQueueModal" class="hidden fixed inset-0 z-50 bg-zinc-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-4 text-xs">
+      <!-- Modal Header -->
+      <div class="flex justify-between items-center pb-3 border-b border-zinc-100">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200">
+            <i data-lucide="send" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 id="webQueueTitle" class="font-bold text-zinc-900 text-sm">Instant Web WhatsApp Queue</h3>
+            <p id="webQueueSubtitle" class="text-zinc-500 text-[11px]">100% Web Native &bull; Works on any browser or mobile device</p>
+          </div>
+        </div>
+        <button onclick="closeWebQueue()" class="text-zinc-400 hover:text-zinc-600 p-1" title="Close Queue">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Active Queue Step Body -->
+      <div id="webQueueActiveBody" class="space-y-4">
+        <!-- Progress Bar -->
+        <div class="space-y-1.5 bg-zinc-50 p-3 rounded-lg border border-zinc-200">
+          <div class="flex justify-between text-[11px] text-zinc-600 font-medium">
+            <span id="webQueueCounter">Contact 1 of 10</span>
+            <span id="webQueuePercent">10%</span>
+          </div>
+          <div class="w-full h-2 bg-zinc-200 rounded-full overflow-hidden">
+            <div id="webQueueBar" class="h-full bg-emerald-600 transition-all duration-300 rounded-full" style="width: 10%;"></div>
+          </div>
+        </div>
+
+        <!-- Recipient Details Card -->
+        <div class="border border-zinc-200 rounded-lg p-4 space-y-3 bg-white">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 id="webQueueName" class="font-bold text-zinc-900 text-sm">Customer Name</h4>
+              <p id="webQueuePhone" class="text-zinc-500 font-mono text-xs">+91 98220 12345</p>
+            </div>
+            <span id="webQueueStatusBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+              Ready to Send
+            </span>
+          </div>
+
+          <div>
+            <label class="block text-[10px] uppercase font-semibold text-zinc-400 mb-1">Message Preview:</label>
+            <div id="webQueueText" class="bg-zinc-50 p-3 rounded border border-zinc-200 text-zinc-800 font-sans text-xs whitespace-pre-line max-h-36 overflow-y-auto leading-relaxed">
+              Message text...
+            </div>
+          </div>
+        </div>
+
+        <!-- Dispatch Buttons -->
+        <div class="space-y-2">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button type="button" onclick="dispatchCurrentWebQueue('web')" class="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg text-xs transition flex items-center justify-center gap-1.5 shadow-xs">
+              <i data-lucide="external-link" class="w-4 h-4"></i>
+              <span>Send via WhatsApp Web</span>
+            </button>
+            <button type="button" onclick="dispatchCurrentWebQueue('mobile')" class="w-full py-2.5 px-3 bg-zinc-900 hover:bg-zinc-800 text-white font-medium rounded-lg text-xs transition flex items-center justify-center gap-1.5 shadow-xs">
+              <i data-lucide="smartphone" class="w-4 h-4"></i>
+              <span>Send via WhatsApp App</span>
+            </button>
+          </div>
+
+          <div class="flex items-center justify-between pt-1">
+            <label class="flex items-center gap-2 cursor-pointer text-zinc-600">
+              <input type="checkbox" id="webQueueAutoAdvance" checked class="rounded text-zinc-900">
+              <span>Auto-advance after opening (<span id="webQueueDelaySec">5</span>s timer)</span>
+            </label>
+            <button type="button" onclick="skipCurrentWebQueue()" class="text-amber-700 hover:underline text-xs flex items-center gap-1">
+              <i data-lucide="skip-forward" class="w-3.5 h-3.5"></i>
+              <span>Skip (No WhatsApp)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Queue Finished Card -->
+      <div id="webQueueFinishedBody" class="hidden text-center py-4 space-y-3">
+        <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 mx-auto flex items-center justify-center font-bold text-xl">
+          ✓
+        </div>
+        <h4 class="font-bold text-zinc-900 text-base">Queue Completed Successfully!</h4>
+        <p id="webQueueFinishedStats" class="text-xs text-zinc-500">All customer wishes have been dispatched.</p>
+        <div class="pt-2">
+          <button type="button" onclick="closeWebQueue()" class="px-5 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-medium">
+            Done & Return to Dashboard
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Minimal Footer -->
+  <footer class="bg-white border-t border-zinc-200 mt-auto py-3 text-center text-[11px] text-zinc-400">
+    PassWish &copy; 2026 &bull; Client CRM & Automated Wishes Dispatcher
+  </footer>
+
+  <script>
+    (function() {
+      if (window.location.protocol === 'file:') {
+        var notice = document.getElementById('fileProtocolNotice');
+        if (notice) notice.classList.remove('hidden');
+        var s = document.createElement('script');
+        s.src = '../static/app.js';
+        document.body.appendChild(s);
+      } else {
+        var s = document.createElement('script');
+        s.src = '/static/app.js';
+        document.body.appendChild(s);
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+# Environment and Secrets (CRITICAL: Never commit database credentials)
+.env
+.env.local
+.env.*.local
+
+# Python cache & compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Temporary and upload directories
+uploads/*
+!uploads/.gitkeep
+backups/*.json
+!backups/.gitkeep
+
+# Local SQLite databases (if any)
+*.db
+*.sqlite
+*.sqlite3
+
+# Hardware license file
+license.dat
+
+# Operating system artifacts
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test output
+test_*.xlsx
+PassWish_*.xlsx

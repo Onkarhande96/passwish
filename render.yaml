@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: passwish-crm
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT"
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: WEB_MODE
+        value: "true"
+      - key: SECRET_KEY
+        generateValue: true
+      # Connect your free Supabase or Neon PostgreSQL URL here:
+      # - key: DATABASE_URL
+      #   value: postgresql://...

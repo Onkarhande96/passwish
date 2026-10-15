@@ -1,0 +1,222 @@
+/* Minimalist Styling for Passport Desk */
+
+body {
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  letter-spacing: -0.01em;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Subtle scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #f4f4f5;
+}
+::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1aa;
+}
+
+/* Active Minimal Tab */
+.tab-btn.active {
+  background-color: #18181b;
+  color: #ffffff !important;
+}
+
+.tab-btn.active svg {
+  color: #ffffff !important;
+}
+
+/* Filter pills */
+.bday-filter-btn.active, .exp-filter-btn.active {
+  background-color: #ffffff;
+  color: #18181b;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Focus styles */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #18181b !important;
+}
+
+/* ========================================================
+   Dark Mode Engine (PassWish Theme Architecture)
+   ======================================================== */
+
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #09090b !important;
+  color: #f4f4f5 !important;
+}
+
+html.dark header {
+  background-color: #121215 !important;
+  border-color: #27272a !important;
+}
+
+/* Containers, Cards & Modals */
+html.dark .bg-white {
+  background-color: #18181b !important;
+  border-color: #27272a !important;
+}
+
+html.dark .bg-zinc-50 {
+  background-color: #121215 !important;
+  border-color: #27272a !important;
+}
+
+html.dark .bg-zinc-100 {
+  background-color: #27272a !important;
+  color: #e4e4e7 !important;
+  border-color: #3f3f46 !important;
+}
+
+/* Text adjustments */
+html.dark .text-zinc-900,
+html.dark .text-zinc-800 {
+  color: #f4f4f5 !important;
+}
+
+html.dark .text-zinc-700,
+html.dark .text-zinc-600 {
+  color: #d4d4d8 !important;
+}
+
+html.dark .text-zinc-500,
+html.dark .text-zinc-400 {
+  color: #a1a1aa !important;
+}
+
+/* Borders & Dividers */
+html.dark .border-zinc-200,
+html.dark .border-zinc-300,
+html.dark .border-zinc-100 {
+  border-color: #27272a !important;
+}
+
+html.dark .divide-zinc-200 > :not([hidden]) ~ :not([hidden]),
+html.dark .divide-zinc-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #27272a !important;
+}
+
+/* Form Controls */
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+  border-color: #3f3f46 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #71717a !important;
+}
+
+html.dark input:focus,
+html.dark select:focus,
+html.dark textarea:focus {
+  border-color: #60a5fa !important;
+}
+
+/* Table Hover & Headers */
+html.dark table thead,
+html.dark table thead tr {
+  background-color: #121215 !important;
+  color: #a1a1aa !important;
+}
+
+html.dark tbody tr:hover {
+  background-color: #202025 !important;
+}
+
+/* Primary Dark Buttons (invert so they pop on dark surfaces) */
+html.dark button.bg-zinc-900,
+html.dark a.bg-zinc-900 {
+  background-color: #f4f4f5 !important;
+  color: #18181b !important;
+}
+
+html.dark button.bg-zinc-900:hover,
+html.dark a.bg-zinc-900:hover {
+  background-color: #e4e4e7 !important;
+}
+
+html.dark button.bg-zinc-800 {
+  background-color: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+html.dark button.bg-zinc-800:hover {
+  background-color: #3f3f46 !important;
+}
+
+/* Secondary outline buttons */
+html.dark .hover\:bg-zinc-50:hover {
+  background-color: #27272a !important;
+}
+
+html.dark .hover\:bg-zinc-100:hover {
+  background-color: #27272a !important;
+}
+
+/* Navigation Buttons */
+html.dark .tab-btn {
+  color: #a1a1aa !important;
+}
+
+html.dark .tab-btn:hover {
+  color: #ffffff !important;
+  background-color: #27272a !important;
+}
+
+html.dark .tab-btn.active {
+  background-color: #27272a !important;
+  color: #ffffff !important;
+  box-shadow: inset 0 0 0 1px #3f3f46 !important;
+}
+
+/* Pill buttons (3m, 6m, 1yr / Today, Tomorrow, Week) */
+html.dark .bday-filter-btn,
+html.dark .exp-filter-btn {
+  color: #a1a1aa !important;
+}
+
+html.dark .bday-filter-btn.bg-white,
+html.dark .exp-filter-btn.bg-white {
+  background-color: #27272a !important;
+  color: #ffffff !important;
+}
+
+/* Modal Backdrops & Overlays */
+html.dark .backdrop-blur-xs,
+html.dark .fixed.inset-0.bg-zinc-900\/40 {
+  background-color: rgba(0, 0, 0, 0.78) !important;
+}
+
+/* Scrollbars in Dark Mode */
+html.dark ::-webkit-scrollbar-track {
+  background: #121215;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
+
+/* Previews & Boxes */
+html.dark #broadcastPreviewList,
+html.dark #previewTableHead,
+html.dark #previewTableBody {
+  border-color: #27272a !important;
+}

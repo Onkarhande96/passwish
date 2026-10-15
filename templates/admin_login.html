@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PassWish — Super Admin Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.441.0/dist/umd/lucide.min.js"></script>
+  <script>
+    (function() {
+      var t = localStorage.getItem('passwish_theme');
+      if (t === 'dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="/static/styles.css" onerror="this.onerror=null;this.href='../static/styles.css';">
+</head>
+<body class="bg-zinc-900 text-zinc-100 font-sans antialiased min-h-screen flex flex-col items-center justify-center p-4 selection:bg-amber-500 selection:text-black">
+
+  <!-- Theme Toggle Button -->
+  <button onclick="toggleTheme()" class="fixed top-4 right-4 p-2 rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 transition shadow-xs text-zinc-300" title="Toggle Light / Dark Mode">
+    <i id="themeToggleIcon" data-lucide="moon" class="w-4 h-4"></i>
+  </button>
+
+  <div class="max-w-md w-full space-y-6">
+    <!-- Brand Header -->
+    <div class="text-center space-y-2.5">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold tracking-wide uppercase">
+        <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+        <span>Super Admin Portal</span>
+      </div>
+      <h1 class="text-3xl font-extrabold tracking-tight text-white flex items-center justify-center gap-2">
+        <span>PassWish</span>
+        <span class="text-amber-500 text-sm font-mono px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30">Control</span>
+      </h1>
+      <p class="text-xs text-zinc-400 max-w-sm mx-auto">
+        लायसन्स मॅनेजमेंट, नवीन कन्सल्टंट ॲड करणे आणि व्हॅलिडिटी नियंत्रित करण्याचे ॲडमिन पॅनल
+      </p>
+    </div>
+
+    <!-- Admin Login Card -->
+    <div class="bg-zinc-800/90 border border-zinc-700/80 rounded-2xl p-7 shadow-2xl backdrop-blur-xs space-y-5">
+      {% if error %}
+      <div class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5">
+        <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400 shrink-0 mt-0.5"></i>
+        <span>{{ error }}</span>
+      </div>
+      {% endif %}
+
+      <form action="/admin/login" method="POST" class="space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold text-zinc-300 mb-1.5 flex items-center justify-between">
+            <span>Admin Username (ॲडमिन आयडी)</span>
+            <span class="text-[10px] text-amber-400/80 font-mono">Master Access</span>
+          </label>
+          <div class="relative">
+            <input type="text" name="username" required autofocus placeholder="admin" 
+                   class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-3 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+            <i data-lucide="user-check" class="w-4 h-4 text-zinc-500 absolute right-3.5 top-3.5 pointer-events-none"></i>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-zinc-300 mb-1.5 flex items-center justify-between">
+            <span>Master Password (पासवर्ड)</span>
+          </label>
+          <div class="relative">
+            <input type="password" name="password" required placeholder="••••••••••••" 
+                   class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-3 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+            <i data-lucide="lock" class="w-4 h-4 text-zinc-500 absolute right-3.5 top-3.5 pointer-events-none"></i>
+          </div>
+        </div>
+
+        <button type="submit" 
+                class="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-bold rounded-xl text-xs transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-[0.99] mt-2">
+          <i data-lucide="shield-alert" class="w-4 h-4"></i>
+          <span>Secure Admin Sign In (ॲडमिन प्रवेश)</span>
+        </button>
+      </form>
+
+      <div class="pt-4 border-t border-zinc-700/60 text-center">
+        <a href="/login" class="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-200 transition py-1 px-3 rounded-lg hover:bg-zinc-700/50">
+          <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+          <span>← Back to Consultant Login (नियमित लॉगिनकडे जा)</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Security Footnote -->
+    <div class="text-center space-y-1">
+      <p class="text-[11px] text-zinc-500 flex items-center justify-center gap-1.5">
+        <i data-lucide="lock" class="w-3 h-3 text-emerald-500"></i>
+        <span>256-Bit Encrypted Neon Cloud Database Connected</span>
+      </p>
+      <p class="text-[10px] text-zinc-600">Unauthorized access attempts are monitored and recorded.</p>
+    </div>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      var isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('passwish_theme', isDark ? 'dark' : 'light');
+      updateThemeIcon(isDark);
+    }
+    function updateThemeIcon(isDark) {
+      var icon = document.getElementById('themeToggleIcon');
+      if (icon) {
+        icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+        lucide.createIcons();
+      }
+    }
+    updateThemeIcon(document.documentElement.classList.contains('dark'));
+    lucide.createIcons();
+  </script>
+</body>
+</html>

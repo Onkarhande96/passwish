@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PassWish — Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.441.0/dist/umd/lucide.min.js"></script>
+  <script>
+    (function() {
+      var t = localStorage.getItem('passwish_theme');
+      if (t === 'dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="/static/styles.css" onerror="this.onerror=null;this.href='../static/styles.css';">
+</head>
+<body class="bg-zinc-50 text-zinc-900 font-sans antialiased min-h-screen flex flex-col items-center justify-center p-4">
+
+  <!-- Theme Toggle Button -->
+  <button onclick="toggleTheme()" class="fixed top-4 right-4 p-2 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 transition shadow-xs text-zinc-700" title="Toggle Light / Dark Mode">
+    <i id="themeToggleIcon" data-lucide="moon" class="w-4 h-4"></i>
+  </button>
+
+  <!-- Local File Notice -->
+  <div id="fileNotice" class="hidden max-w-sm w-full mb-4 bg-amber-500 text-white p-3 rounded-lg text-xs font-medium text-center shadow-xs">
+    ⚠️ <strong>Important:</strong> You opened this file directly (<code class="bg-amber-600 px-1 py-0.5 rounded font-mono">file://</code>). 
+    Please start the server with <strong>run_app.bat</strong> or <code class="bg-amber-600 px-1 py-0.5 rounded font-mono">python app.py</code>, then visit 
+    <a href="http://127.0.0.1:5000" target="_blank" class="underline font-bold text-white ml-1">http://127.0.0.1:5000</a>!
+  </div>
+
+  <div class="max-w-sm w-full space-y-6">
+    <!-- Brand Header -->
+    <div class="text-center space-y-2">
+      <div class="w-10 h-10 rounded-xl bg-zinc-900 text-white mx-auto flex items-center justify-center shadow-xs">
+        <i data-lucide="compass" class="w-5 h-5"></i>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight text-zinc-900">PassWish</h1>
+      <p class="text-xs text-zinc-500">Sign in to your client CRM & automated wishes desk</p>
+    </div>
+
+    <!-- Login Card -->
+    <div class="bg-white border border-zinc-200 rounded-xl p-6 shadow-xs space-y-4">
+      {% if error %}
+      <div class="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+        <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+        <span>{{ error }}</span>
+      </div>
+      {% endif %}
+
+      <form action="/login" method="POST" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block font-medium text-zinc-700 mb-1">Username</label>
+          <input type="text" name="username" required autofocus placeholder="admin" class="w-full border border-zinc-200 rounded-lg p-2.5 text-xs focus:outline-none focus:border-zinc-900">
+        </div>
+
+        <div>
+          <label class="block font-medium text-zinc-700 mb-1">Password</label>
+          <input type="password" name="password" required placeholder="••••••••" class="w-full border border-zinc-200 rounded-lg p-2.5 text-xs focus:outline-none focus:border-zinc-900">
+        </div>
+
+        <button type="submit" class="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-medium rounded-lg text-xs transition flex items-center justify-center gap-1.5 mt-2 shadow-xs">
+          <span>Sign In / लॉगिन</span>
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+        </button>
+      </form>
+
+
+    </div>
+
+    <div class="text-center space-y-1">
+      <p class="text-[11px] text-zinc-400">कन्सल्टंट / स्टाफ लॉगिनसाठी तुमचा दिलेला युझरनेम व पासवर्ड वापरा.</p>
+      <p class="text-[10px] text-zinc-400">लायसन्स संदर्भात अडचण असल्यास ॲडमिनशी संपर्क साधा.</p>
+    </div>
+  </div>
+
+  <script>
+    if (window.location.protocol === 'file:') {
+      var notice = document.getElementById('fileNotice');
+      if (notice) notice.classList.remove('hidden');
+    }
+    function toggleTheme() {
+      var isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('passwish_theme', isDark ? 'dark' : 'light');
+      updateThemeIcon(isDark);
+    }
+    function updateThemeIcon(isDark) {
+      var icon = document.getElementById('themeToggleIcon');
+      if (icon) {
+        icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+        lucide.createIcons();
+      }
+    }
+    updateThemeIcon(document.documentElement.classList.contains('dark'));
+    lucide.createIcons();
+  </script>
+</body>
+</html>
