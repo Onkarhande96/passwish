@@ -231,7 +231,11 @@ class BackupLog(Base):
 def get_db_url():
     url = os.environ.get('DATABASE_URL')
     if not url:
-        raise RuntimeError("DATABASE_URL is not set! Local SQLite database storage is strictly disabled. Please configure your Neon PostgreSQL DATABASE_URL in .env.")
+        print("\n" + "="*70, flush=True)
+        print("[CRITICAL ERROR] DATABASE_URL is missing in Environment Variables!", flush=True)
+        print("Render वर चालवण्यासाठी Render Dashboard -> Environment Variables मध्ये DATABASE_URL जोडा.", flush=True)
+        print("="*70 + "\n", flush=True)
+        raise RuntimeError("DATABASE_URL is not set! Please configure your Neon PostgreSQL DATABASE_URL in Render Dashboard Environment Variables.")
     
     # Normalize Postgres URL for modern SQLAlchemy (Render/Supabase use postgres://)
     if url.startswith("postgres://"):
