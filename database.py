@@ -227,15 +227,14 @@ class BackupLog(Base):
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else ''
         }
 
+NEON_FALLBACK_URL = "postgresql://neondb_owner:npg_CtjLKck9zGh8@ep-wild-hat-b5svo1p0-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require"
+
 # Database engine & session
 def get_db_url():
     url = os.environ.get('DATABASE_URL')
     if not url:
-        print("\n" + "="*70, flush=True)
-        print("[CRITICAL ERROR] DATABASE_URL is missing in Environment Variables!", flush=True)
-        print("Render वर चालवण्यासाठी Render Dashboard -> Environment Variables मध्ये DATABASE_URL जोडा.", flush=True)
-        print("="*70 + "\n", flush=True)
-        raise RuntimeError("DATABASE_URL is not set! Please configure your Neon PostgreSQL DATABASE_URL in Render Dashboard Environment Variables.")
+        print("[PassWish] Using configured Neon Cloud PostgreSQL database.", flush=True)
+        url = NEON_FALLBACK_URL
     
     # Normalize Postgres URL for modern SQLAlchemy (Render/Supabase use postgres://)
     if url.startswith("postgres://"):
