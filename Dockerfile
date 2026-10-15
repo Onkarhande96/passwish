@@ -20,10 +20,10 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY . .
 
-# Create necessary runtime directories
-RUN mkdir -p /app/uploads /app/backups
+# Create necessary runtime directories and make start.sh executable
+RUN mkdir -p /app/uploads /app/backups && chmod +x /app/start.sh
 
-EXPOSE 10000 5000
+EXPOSE 10000
+EXPOSE 5000
 
-# Shell form binds dynamically to Render's injected $PORT
-CMD sh -c "gunicorn app:app --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:${PORT:-10000}"
+CMD ["/bin/sh", "/app/start.sh"]

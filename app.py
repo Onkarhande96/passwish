@@ -53,7 +53,8 @@ def enforce_machine_license():
         '/static',
         '/uploads',
         '/activate',
-        '/api/license'
+        '/api/license',
+        '/health'
     )
     for p in allowed_prefixes:
         if request.path.startswith(p):
@@ -635,6 +636,12 @@ def api_license_status():
         'machine_id': get_machine_id(),
         'details': details or {'is_valid': False, 'status_text': 'Unactivated'}
     })
+
+# --- Health Check Route for Cloud Load Balancers ---
+@app.route('/health')
+@app.route('/healthz')
+def health_check():
+    return jsonify({'status': 'healthy', 'app': 'PassWish', 'timestamp': datetime.datetime.utcnow().isoformat()}), 200
 
 # --- Web UI Routes ---
 @app.route('/')
