@@ -20,10 +20,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY . .
 
-# Create necessary runtime directories and make start.sh executable
+# Create necessary runtime directories and ensure executable permission
 RUN mkdir -p /app/uploads /app/backups && chmod +x /app/start.sh
 
 EXPOSE 10000
-EXPOSE 5000
 
 CMD ["/bin/sh", "/app/start.sh"]
